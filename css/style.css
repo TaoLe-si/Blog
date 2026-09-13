@@ -1016,6 +1016,65 @@ figure.highlight pre {
 }
 .post-nav-item:hover { border-color: var(--accent); background: var(--bg-soft); }
 .post-nav-item.next { text-align: right; }
+
+/* ---------------- Comments (Utterances + 本机管理态) ---------------- */
+
+.comments {
+  margin: 56px 0 0;
+  padding: 36px 0 0;
+  border-top: 1px solid var(--line);
+}
+.comments-title {
+  margin: 0 0 20px;
+  font-size: 19px;
+  letter-spacing: -.02em;
+  font-weight: 700;
+}
+.comments-utterances { margin: 0 0 14px; }
+/* 站点 owner 登录留言时，给 iframe 内的对应消息加个描边（Utterances 自身会给
+   Maintainer 标，这里只是再多一道视觉强调，避免被误以为是冒名） */
+.comments-utterances[data-signed-in="owner"] { box-shadow: 0 0 0 2px var(--accent-soft); border-radius: var(--radius); }
+
+.comments-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 6px;
+}
+.comments-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--text-soft);
+  transition: border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+.comments-manage:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.comments-manage svg { width: 13px; height: 13px; }
+
+.comments-admin-hint {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+  border: 1px dashed var(--accent);
+  max-width: 100%;
+}
+.comments-admin-hint svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; color: var(--accent); }
 .post-nav-item span {
   font-size: 12px;
   letter-spacing: .08em;
