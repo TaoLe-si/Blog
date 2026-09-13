@@ -12,6 +12,16 @@
     var tags = page.tags && page.tags.length ? page.tags.toArray() : [];
     var plain = String(page.content || '').replace(/<[^>]+>/g, '').length;
     var mins = Math.max(1, Math.round(plain / 400));
+
+    // 分类名 → 板块 key。topics.ejs 里锚点是 id="<key>"，
+    // 直接用分类名（中文）拼 hash 会定位不到，也过不了 querySelector。
+    var topicKeyOf = function (name) {
+      var list = theme.topics || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].name === name || list[i].key === name) return list[i].key;
+      }
+      return name;
+    };
   %>
 
   <main class="wrap">
@@ -21,7 +31,7 @@
           <div class="crumb">
             <a href="<%- url_for('/') %>">首页</a>
             <% if (cats.length) { %>
-              / <a href="<%- url_for('/topics/') %>#<%= cats[0].slug || cats[0].name %>"><%= cats[0].name %></a>
+              / <a href="<%- url_for('/topics/') %>#<%= topicKeyOf(cats[0].name) %>"><%= cats[0].name %></a>
             <% } %>
             / <%= page.title %>
           </div>
@@ -38,7 +48,7 @@
           <% if (cats.length || tags.length) { %>
           <div class="post-tags">
             <% cats.forEach(function (c) { %>
-              <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= c.slug || c.name %>"><%= c.name %></a>
+              <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= topicKeyOf(c.name) %>"><%= c.name %></a>
             <% }); %>
             <% tags.forEach(function (t) { %>
               <a class="chip" href="<%- url_for(t.path) %>"><%= t.name %></a>
@@ -53,7 +63,7 @@
 
         <footer class="post-foot" style="margin-top:40px;padding-top:22px;border-top:1px solid var(--line)">
           <% cats.forEach(function (c) { %>
-            <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= c.slug || c.name %>"><%= c.name %></a>
+            <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= topicKeyOf(c.name) %>"><%= c.name %></a>
           <% }); %>
           <a class="read-more" href="<%- url_for('/archives/') %>">查看归档
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>

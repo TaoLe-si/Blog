@@ -62,8 +62,11 @@
           <%
             var st = info[t.name] || { count: 0, latest: null };
           %>
-          <a class="topic-card" href="#<%= t.key %>" data-topic="<%= t.key %>"
-             style="--topic-color:<%= t.color %>;--topic-bg:<%= t.bg %>">
+          <div class="topic-card" id="<%= t.key %>" data-topic="<%= t.key %>"
+               style="--topic-color:<%= t.color %>;--topic-bg:<%= t.bg %>">
+            <%# 整卡可点靠覆盖层实现。<a> 不能嵌套 <a>，之前卡里嵌了「最新」的文章链接，
+                浏览器会拆出一个带同样 id 的幽灵节点占掉一个 grid 格子，整个板块网格错位一行 %>
+            <a class="topic-cover" href="#<%= t.key %>" aria-label="只看<%= t.name %>"></a>
             <div class="topic-head">
               <span class="topic-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><%- icons[t.icon] || icons.file %></svg>
@@ -80,7 +83,7 @@
                 <span style="color:var(--text-mute)">暂无文章</span>
               <% } %>
             </div>
-          </a>
+          </div>
         <% }); %>
       </div>
     </div>

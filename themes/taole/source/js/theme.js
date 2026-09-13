@@ -633,6 +633,50 @@
     }
   }
 
+  /* ---------- 锚点定位（含 PJAX 换页后） ---------- */
+
+  var flashTimer = null;
+
+  // hash 可能是 percent-encoded 的中文（#%E7%BC%96%E7%A8%8B），
+  // 拿它去调 querySelector 会直接抛 SyntaxError，只能解码后 getElementById。
+  function hashTarget(hash) {
+    if (!hash || hash === "#") return null;
+    var raw = hash.charAt(0) === "#" ? hash.slice(1) : hash;
+    if (!raw) return null;
+    var id = raw;
+    try { id = decodeURIComponent(raw); } catch (e) { /* 非法转义就按原样找 */ }
+    return doc.getElementById(id) || doc.getElementById(raw);
+  }
+
+  // 落点闪一下边框，确认真的跳到位了
+  function flashTarget(el) {
+    if (!el || !el.classList.contains("topic-card")) return;
+    if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+    var on = doc.querySelectorAll(".topic-card.is-target");
+    Array.prototype.forEach.call(on, function (n) { n.classList.remove("is-target"); });
+    void el.offsetWidth; // 强制重排，否则同一个元素连点两次动画不会重播
+    el.classList.add("is-target");
+    flashTimer = setTimeout(function () {
+      el.classList.remove("is-target");
+      flashTimer = null;
+    }, 1700);
+  }
+
+  function scrollToHash(hash) {
+    var el = hashTarget(hash);
+    if (!el) return false;
+    var hdr = doc.querySelector(".site-header");
+    // 顶栏是 sticky 的，落到目标上时得把它的高度补回来
+    var offset = (hdr ? hdr.getBoundingClientRect().height : 68) + 16;
+    var y = el.getBoundingClientRect().top +
+      (window.pageYOffset || doc.documentElement.scrollTop) - offset;
+    // 必须是 instant：behavior:"auto" 会跟随 html 上的 scroll-behavior:smooth，
+    // 首屏加载期间的平滑滚动会被打断，落点就偏了（实测偏 130px+）
+    window.scrollTo({ top: Math.max(0, y), behavior: "instant" });
+    flashTarget(el);
+    return true;
+  }
+
   /* ---------- 每次导航后重跑 ---------- */
   function initPage() {
     header = doc.querySelector(".site-header");
@@ -653,6 +697,9 @@
 
     onScroll();
     if (updateEdge) updateEdge();
+
+    // PJAX 换页不触发浏览器的原生锚点跳转，得自己补一次
+    if (location.hash) scrollToHash(location.hash);
   }
 
   /* ================= PJAX：切页不重建文档，音乐不断 ================= */
@@ -760,7 +807,11 @@
       }
 
       initPage();
-      window.scrollTo(0, isPop ? (restoreY || 0) : 0);
+      // initPage 里已经按 hash 定位过就别再拉回顶部
+      if (!location.hash || !hashTarget(location.hash)) {
+        // 同样必须 instant，否则 PJAX 换页会肉眼可见地「滑」回顶部
+        window.scrollTo({ top: isPop ? (restoreY || 0) : 0, behavior: "instant" });
+      }
     }
   }
 
@@ -769,4 +820,10 @@
   initEdge();
   initPage();
   initPjax();
+
+  // 同页换 hash 的滚动交给浏览器（smooth），这里只补一下落点高亮。
+  // PJAX 走 pushState，不会触发 hashchange，所以不会和上面重复。
+  window.addEventListener("hashchange", function () {
+    flashTarget(hashTarget(location.hash));
+  });
 })();
