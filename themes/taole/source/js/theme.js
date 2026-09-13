@@ -1,4 +1,4 @@
-/* TaoLe's Blog — 主题交互 */
+/* 桃的博客 — 主题交互 */
 (function () {
   "use strict";
 
