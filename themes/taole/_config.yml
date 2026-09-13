@@ -126,3 +126,19 @@ menu:
   板块: /topics/
   归档: /archives/
   标签: /tags/
+
+# 评论系统（Utterances：评论 = 仓库里的 Issue）
+# 启用前先去 https://github.com/apps/utterances 给仓库装一下 app
+utterances:
+  enable: true
+  repo: "TaoLe-si/Blog"     # 必须是公开仓库
+  issue-term: pathname        # 用 URL 路径作 issue 标识
+  theme: github-light         # 浅色 / github-dark 跟站点主题切换
+  label: "💬 blog-comment"  # 打在 issue 上的标签，便于 GitHub 端筛选
+  # 管理员：你在 GitHub 上的用户名。脚本会监听 Utterances 的 signin 事件，
+  # 匹配后给当前评论附加"作者"小标，并显示快捷管理按钮
+  admin: "TaoLe-si"
+  # 管理模式：默认隐藏管理按钮，博客所有者在本机 console 里执行
+  #   localStorage.setItem('taole-admin', '1')
+  # 即可显示删除/跳转 GitHub 等快捷按钮（清除 = removeItem）
+  local_admin_key: "taole-admin"

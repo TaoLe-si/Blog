@@ -677,6 +677,81 @@
     return true;
   }
 
+  /* ---------- 评论（Utterances + 本机管理态） ---------- */
+  function initComments() {
+    var host = doc.getElementById("comments-utterances");
+    if (!host) return;
+
+    var repo = host.getAttribute("data-repo");
+    var issueTerm = host.getAttribute("data-issue-term") || "pathname";
+    var theme = host.getAttribute("data-theme") || "github-light";
+    var label = host.getAttribute("data-label") || "";
+    var admin = host.getAttribute("data-admin") || "";
+    var localKey = host.getAttribute("data-local-admin-key") || "taole-admin";
+    var issueUrl = host.getAttribute("data-issue-url") || location.pathname;
+
+    // 1) 加载 Utterances 脚本。Utterances 内部会用 pathname 创建/查询 Issue
+    var s = doc.createElement("script");
+    s.src = "https://utteranc.es/client.js";
+    s.setAttribute("repo", repo);
+    s.setAttribute("issue-term", issueTerm);
+    s.setAttribute("theme", theme);
+    if (label) s.setAttribute("label", label);
+    s.setAttribute("crossorigin", "anonymous");
+    s.async = true;
+    host.appendChild(s);
+
+    // 2) 构造"在 GitHub 上管理"的直达链接。
+    //    Utterances 创建的 issue 标题是文章标题；body 里带 URL 路径。
+    //    GitHub 搜索语法 in:title 支持中英文 + URL 片段；用 is:issue 限定类型。
+    var manageLink = doc.getElementById("comments-manage");
+    var hint = doc.getElementById("comments-admin-hint");
+
+    function buildSearch() {
+      var q = "is:issue " + repo.split("/")[1] + " " + issueUrl;
+      return "https://github.com/" + repo + "/issues?q=" + encodeURIComponent(q);
+    }
+    function buildRepoIssues() {
+      // 备用：先列所有评论 issue（按 label 过滤）
+      return "https://github.com/" + repo + "/issues?q=is%3Aissue+" +
+             (label ? "label%3A" + encodeURIComponent(label) : "");
+    }
+
+    function isLocalAdmin() {
+      try { return localStorage.getItem(localKey) === "1"; } catch (e) { return false; }
+    }
+
+    function showManage() {
+      if (!manageLink) return;
+      // 本机管理态：精确搜索当前文章的 issue；
+      // 非本机（或未登录仓库写权限）：只显示一个温和的"在 GitHub 上管理"入口
+      manageLink.setAttribute("href", isLocalAdmin() ? buildSearch() : buildRepoIssues());
+      manageLink.hidden = false;
+    }
+
+    if (manageLink) showManage();
+    if (hint) hint.hidden = !isLocalAdmin();
+
+    // 3) 监听 Utterances iframe 的 postMessage，识别当前登录用户。
+    //    官方从 v0.x 起就发 {type:"signin", user:{login:...}}，origin 固定为 utteranc.es。
+    var me = null;
+    window.addEventListener("message", function (ev) {
+      if (ev.origin !== "https://utteranc.es") return;
+      var data;
+      try { data = typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data; } catch (e) { return; }
+      if (!data || data.type !== "signin" || !data.user) return;
+      me = (data.user.login || "").toLowerCase();
+      // 命中的就是仓库 owner → 把整个评论区标成"作者本人"，让所有人能看到这是站长在说话
+      if (admin && me === admin.toLowerCase()) {
+        host.setAttribute("data-signed-in", "owner");
+      }
+      // 登录后顺便把"管理评论"链接指向这篇文章对应的 issue（精确搜索）
+      if (manageLink && isLocalAdmin()) {
+        manageLink.setAttribute("href", buildSearch());
+      }
+    });
+  }
+
   /* ---------- 每次导航后重跑 ---------- */
   function initPage() {
     header = doc.querySelector(".site-header");
@@ -691,6 +766,7 @@
     initPageBg();
     initEgg();
     initToc();
+    initComments();
     initCodeCopy();
     initTopicFilter();
     initReveal();

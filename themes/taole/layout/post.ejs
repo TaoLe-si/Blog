@@ -86,6 +86,30 @@
         </nav>
       </article>
     </div>
+
+    <% if (theme.utterances && theme.utterances.enable) { %>
+    <section class="comments" id="comments">
+      <h2 class="comments-title">评论</h2>
+      <div class="comments-utterances" id="comments-utterances"
+           data-repo="<%= theme.utterances.repo %>"
+           data-issue-term="<%= theme.utterances['issue-term'] %>"
+           data-theme="<%= theme.utterances.theme %>"
+           <% if (theme.utterances.label) { %>data-label="<%= theme.utterances.label %>"<% } %>
+           <% if (theme.utterances.admin) { %>data-admin="<%= theme.utterances.admin %>"<% } %>
+           <% if (theme.utterances.local_admin_key) { %>data-local-admin-key="<%= theme.utterances.local_admin_key %>"<% } %>
+           data-issue-url="<%- url_for(page.path) %>"></div>
+      <div class="comments-foot">
+        <a class="comments-manage" id="comments-manage" href="#" target="_blank" rel="noopener" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span class="manage-label">在 GitHub 上管理评论</span>
+        </a>
+        <span class="comments-admin-hint" id="comments-admin-hint" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          本机已开启管理态，登录 GitHub 后你的留言会带"作者"标，并可在此页一键跳到对应 Issue 进行删除/编辑/锁帖。
+        </span>
+      </div>
+    </section>
+    <% } %>
   </main>
 
   <% if (String(page.content || '').match(/<h[23]/)) { %>
