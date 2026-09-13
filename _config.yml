@@ -2,7 +2,8 @@
 ## Docs: https://hexo.io/docs/configuration.html
 
 # Site
-title: TaoLe's Blog
+# title 会用在：顶栏站点名、浏览器标签、og:site_name、订阅源标题
+title: 桃
 subtitle: '桃之夭夭 · 灼灼其华'
 description: '游戏开发、编程折腾、读书笔记，以及一些还没成型的想法。'
 keywords: 编程,游戏开发,Godot,教程,文学
