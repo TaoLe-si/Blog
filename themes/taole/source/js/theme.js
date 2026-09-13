@@ -182,6 +182,7 @@
 
     var index = 0;
     var touching = false;
+    var PAUSE_KEY = "music-user-paused";
 
     function fmt(sec) {
       if (!isFinite(sec)) return "0:00";
@@ -204,7 +205,9 @@
     function toggle() {
       if (player.classList.contains("is-playing")) {
         audio.pause();
+        try { localStorage.setItem(PAUSE_KEY, "1"); } catch (e) {}
       } else {
+        try { localStorage.removeItem(PAUSE_KEY); } catch (e) {}
         audio.play().catch(function () { /* 自动播放被拦或加载失败，忽略 */ });
       }
     }
@@ -246,6 +249,33 @@
       }
     }, { passive: true });
 
+    // 把手：触屏开关浮层，桌面直接播放/暂停
+    var handle = player.querySelector(".music-handle");
+    if (handle) {
+      handle.addEventListener("click", function () {
+        if (window.matchMedia("(hover: none)").matches) {
+          player.classList.toggle("is-touch");
+        } else {
+          toggle();
+        }
+      });
+    }
+
     load(0);
+
+    // 进入自动播放：被浏览器拦截时，等用户第一次交互立刻开播
+    var wantAuto = true;
+    try { wantAuto = !localStorage.getItem(PAUSE_KEY); } catch (e) {}
+    if (wantAuto && tracks.length) {
+      audio.play().catch(function () {
+        var kick = function () {
+          audio.play().catch(function () {});
+          window.removeEventListener("pointerdown", kick);
+          window.removeEventListener("keydown", kick);
+        };
+        window.addEventListener("pointerdown", kick);
+        window.addEventListener("keydown", kick);
+      });
+    }
   }
 })();

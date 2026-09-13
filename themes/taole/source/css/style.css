@@ -926,19 +926,19 @@ figure.highlight pre {
 .music-player {
   position: fixed;
   left: 0; top: 0; bottom: 0;
-  width: 10px;
+  width: 26px;
   z-index: 95;
 }
 
+/* 全高竖向进度条 */
 .music-rail {
   position: absolute;
   left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  width: 4px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
   cursor: pointer;
-  transition: width .18s ease;
 }
-.music-player:hover .music-rail { width: 5px; }
+.music-player:hover .music-rail { width: 6px; }
 
 .music-rail-fill {
   position: absolute;
@@ -947,9 +947,28 @@ figure.highlight pre {
   background: var(--accent);
 }
 
+/* 贴左缘的音符把手：常驻可见 */
+.music-handle {
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  display: grid; place-items: center;
+  width: 22px; height: 46px;
+  border: 1px solid var(--line);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  background: var(--card);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.music-handle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.music-handle svg { width: 14px; height: 14px; }
+.music-player.is-playing .music-handle { background: var(--accent); color: #fff; border-color: var(--accent); }
+
 .music-flyout {
   position: absolute;
-  left: 10px; top: 50%;
+  left: 30px; top: 50%;
   transform: translateY(-50%) translateX(-6px);
   display: flex;
   flex-direction: column;
