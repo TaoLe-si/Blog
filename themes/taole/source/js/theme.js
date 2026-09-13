@@ -356,6 +356,20 @@
     var eggNeed = pageBg.egg.clicks;
     var eggHits = 0;
     var eggChain = null;
+    var eggLoaded = false;
+
+    // 图片就绪后再加 class，避免切换瞬间背景空白
+    function revealEgg() {
+      eggCard.classList.add("is-egg");
+    }
+
+    function armEgg() {
+      if (eggLoaded) return;
+      var img = new Image();
+      img.onload = function () { eggLoaded = true; };
+      img.src = pageBg.egg.src;
+    }
+    armEgg();
 
     eggCard.addEventListener("click", function () {
       if (eggCard.classList.contains("is-egg")) return;
@@ -373,7 +387,16 @@
         eggHits = 0;
         clearTimeout(eggChain);
         eggChain = null;
-        eggCard.classList.add("is-egg");
+
+        if (eggLoaded) {
+          revealEgg();
+        } else {
+          // 少见：图还没下完就被点到 10 次，等它到位再切换
+          var img = new Image();
+          img.onload = function () { eggLoaded = true; revealEgg(); };
+          img.onerror = revealEgg;
+          img.src = pageBg.egg.src;
+        }
       }
     });
   }

@@ -71,6 +71,22 @@
   probe.onerror = fail;
   probe.src = pick.src;
   if (probe.complete && probe.naturalWidth) ready();
+
+  /* 彩蛋图不在关键路径上，但一旦触发就要立刻可见。
+     等主背景就绪后的空闲时段静默预载，避免第 10 次点击时背景空一帧 */
+  function preloadEgg() {
+    if (!EGG) return;
+    var img = new Image();
+    img.decoding = "async";
+    img.src = EGG.src;
+  }
+  if (EGG) {
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(preloadEgg, { timeout: 3000 });
+    } else {
+      setTimeout(preloadEgg, 1200);
+    }
+  }
 })();
 </script>
 <% } %>
