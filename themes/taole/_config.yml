@@ -83,10 +83,12 @@ topics:
     bg: "rgba(79,163,91,.10)"
     icon: heart
 
-# 迷你音乐播放器（右侧贴边，默认收起，不自动播放）
+# 迷你音乐播放器（左侧贴边，默认收起）
 # file 为站点根绝对路径（Hexo 会带上 root 前缀）
 music:
   enable: true
+  # 音量 0~1（浏览器默认满音量是 1）。0.6 大约比原来低一档，不吵
+  volume: 0.6
   tracks:
     - file: /music/maybe-one-day.mp3
       title: Mina Okabe - Maybe One Day

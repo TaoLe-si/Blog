@@ -33,60 +33,12 @@
   }
 %>
 <% if (bgList.length) { %>
-<div class="page-bg" id="page-bg" aria-hidden="true">
+<%# 数据放 data-*，逻辑在 theme.js 的 initPageBg()。
+    PJAX 换页时插入的内联 <script> 不会执行，所以不能把逻辑写在这儿。 %>
+<div class="page-bg" id="page-bg" aria-hidden="true"
+     data-list="<%= jsonSafe(bgList) %>"
+     data-egg="<%= eggData ? jsonSafe(eggData) : '' %>">
   <div class="page-bg-img"></div>
   <div class="page-bg-veil"></div>
 </div>
-<script>
-(function () {
-  "use strict";
-  var LIST = <%- jsonSafe(bgList) %>;
-  var EGG = <%- jsonSafe(eggData) %>;
-  var root = document.documentElement;
-
-  /* 每次页面加载都重新抽一张 —— 不写 localStorage / sessionStorage */
-  var pick = LIST[Math.floor(Math.random() * LIST.length)];
-
-  root.classList.add("has-page-bg");
-  root.style.setProperty("--page-bg-image", 'url("' + pick.src + '")');
-  root.style.setProperty("--page-bg-veil", String(pick.veil));
-
-  if (EGG) {
-    root.style.setProperty("--egg-image", 'url("' + EGG.src + '")');
-    root.style.setProperty("--egg-veil", String(EGG.veil));
-  }
-
-  /* 交给 theme.js 的彩蛋模块 */
-  window.__PAGE_BG__ = { list: LIST, pick: pick, egg: EGG };
-
-  /* 预加载完成再淡入，避免"先空白后跳图" */
-  var box = document.getElementById("page-bg");
-  if (!box) return;
-
-  function ready() { box.classList.add("is-ready"); }
-  function fail() { root.classList.remove("has-page-bg"); }
-
-  var probe = new Image();
-  probe.onload = ready;
-  probe.onerror = fail;
-  probe.src = pick.src;
-  if (probe.complete && probe.naturalWidth) ready();
-
-  /* 彩蛋图不在关键路径上，但一旦触发就要立刻可见。
-     等主背景就绪后的空闲时段静默预载，避免第 10 次点击时背景空一帧 */
-  function preloadEgg() {
-    if (!EGG) return;
-    var img = new Image();
-    img.decoding = "async";
-    img.src = EGG.src;
-  }
-  if (EGG) {
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(preloadEgg, { timeout: 3000 });
-    } else {
-      setTimeout(preloadEgg, 1200);
-    }
-  }
-})();
-</script>
 <% } %>

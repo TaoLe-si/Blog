@@ -1,5 +1,11 @@
 <% if (theme.music && theme.music.enable && theme.music.tracks && theme.music.tracks.length) { %>
+<%
+  var vol = (theme.music && typeof theme.music.volume === 'number') ? theme.music.volume : 0.6;
+  if (!(vol >= 0)) vol = 0.6;
+  if (vol > 1) vol = 1;
+%>
 <div id="music-player" class="music-player"
+     data-volume="<%= vol %>"
      data-tracks='<%= JSON.stringify(theme.music.tracks.map(function(t){
        var title = t.title || "";
        var idx = title.indexOf(" - ");
@@ -30,6 +36,6 @@
     </div>
     <div class="music-time">0:00</div>
   </div>
-  <audio class="music-audio" preload="none"></audio>
+  <audio class="music-audio" preload="metadata"></audio>
 </div>
 <% } %>
