@@ -707,7 +707,10 @@ img { max-width: 100%; }
 .post-layout > article {
   max-width: 780px;
   width: 100%;
+  min-width: 0;        /* 防止 grid item 被内容撑爆 */
   margin: 0 auto;
+  overflow-wrap: anywhere;  /* 长 LaTeX / URL 强制可断行 */
+  word-wrap: break-word;
 }
 
 .post-head { padding: 8px 0 26px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
@@ -721,8 +724,8 @@ img { max-width: 100%; }
 .crumb { font-size: 13.5px; color: var(--text-mute); }
 .crumb a:hover { color: var(--accent); }
 
-.post-body { font-size: 17.5px; line-height: 2; }
-.post-body > p { margin: 0 0 18px; text-indent: 2em; }
+.post-body { font-size: 17.5px; line-height: 2; overflow-wrap: anywhere; word-wrap: break-word; }
+.post-body > p { margin: 0 0 18px; text-indent: 2em; overflow-wrap: anywhere; }
 .post-body h2 {
   margin: 42px 0 14px;
   padding-bottom: 10px;
@@ -1501,15 +1504,15 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
   .nav-links a:active, .to-top:active, .chip:active { transform: none; }
 }
 
-/* KaTeX：数学块独立行，不吃段首缩进；行内公式不破坏中文换行 */
-.post-body p > .katex-display { text-indent: 0; margin: 1em 0; }
-.post-body .katex { font-size: 1em; }
-.post-body .katex-display > .katex { display: inline-block; }
-/* KaTeX 渲染失败回退：保留原文 + 红色虚线，便于人眼识别 */
-.katex-error {
+/* MathJax：数学块独立行，不吃段首缩进；行内公式不破坏中文换行 */
+.post-body mjx-container[display="true"] { text-indent: 0; margin: 1em 0; display: block; text-align: center; }
+.post-body mjx-container { font-size: 1.05em; }
+/* 错误回退：MathJax 渲染失败时给 mjx-merror 一个明显的视觉提示 */
+.post-body mjx-merror,
+.post-body [data-mjx-error] {
   color: #c0392b;
   border-bottom: 1px dashed #c0392b;
-  padding: 0 2px;
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.95em;
+  font-size: 0.92em;
+  padding: 0 2px;
 }
