@@ -21,60 +21,51 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=3bc43213">
+<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
 
-<!-- KaTeX（数学公式渲染）：国内 CDN 优先，国际 CDN 兜底 -->
-<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
-      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
+<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true,
+      processEnvironments: true
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+      ignoreHtmlClass: 'no-math',
+      processHtmlClass: 'has-math'
+    },
+    svg: { fontCache: 'global' },
+    startup: {
+      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
+    }
+  };
+</script>
+<!-- 三个 CDN 链：baomitu（360，国内最快）→ bootcdn → jsdelivr；按顺序尝试 -->
 <script>
 (function () {
-  // CDN 链：bootcdn（国内）→ staticfile（360，国内）→ jsdelivr（国际）
-  var CDNS = [
-    'https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/',
-    'https://cdn.staticfile.org/KaTeX/0.16.11/',
-    'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/'
+  var SOURCES = [
+    'https://lib.baomitu.com/mathjax/3.2.2/es5/tex-svg.js',
+    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
+    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
   ];
-  function loadScript(src, cb) {
+  function tryLoad(i) {
+    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
     var s = document.createElement('script');
-    s.defer = true;
-    s.crossOrigin = 'anonymous';
-    s.onload = function () { cb(true); };
-    s.onerror = function () { cb(false); };
-    s.src = src;
+    s.async = true;
+    s.src = SOURCES[i];
+    s.onload = function () {
+      // MathJax v3 加载完成后做一次 typeset
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
+      }
+    };
+    s.onerror = function () { tryLoad(i + 1); };
     document.head.appendChild(s);
   }
-  function tryCdn(i, file, cb) {
-    if (i >= CDNS.length) return cb(false);
-    loadScript(CDNS[i] + file, function (ok) {
-      if (ok) cb(CDNS[i]); else tryCdn(i + 1, file, cb);
-    });
-  }
-  function runAutoRender() {
-    if (typeof renderMathInElement !== 'function') return;
-    renderMathInElement(document.body, {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$',  right: '$',  display: false },
-        { left: '\\[', right: '\\]', display: true },
-        { left: '\\(', right: '\\)', display: false }
-      ],
-      throwOnError: false,
-      errorCallback: function (msg, err) { console.warn('KaTeX error:', msg); }
-    });
-  }
-  // 先 katex.js，再 auto-render
-  tryCdn(0, 'katex.min.js', function (base) {
-    if (!base) { console.warn('KaTeX: 所有 CDN 均不可用，公式将以源码形式显示'); return; }
-    var i = CDNS.indexOf(base);
-    tryCdn(i, 'contrib/auto-render.min.js', function (ok) {
-      if (!ok) return;
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runAutoRender);
-      } else {
-        runAutoRender();
-      }
-    });
-  });
+  tryLoad(0);
 })();
 </script>
 
@@ -181,7 +172,7 @@
           
         </header>
 
-        <div class="post-body">
+        <div class="post-body has-math">
           <p>我醒了？不，或许吧。</p>
 <span id="more"></span>
 
