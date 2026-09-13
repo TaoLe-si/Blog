@@ -703,6 +703,13 @@ img { max-width: 100%; }
   align-items: start;
 }
 
+/* 文章正文：限定阅读宽度并居中（不超过 1140px 的容器） */
+.post-layout > article {
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .post-head { padding: 8px 0 26px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
 .post-head h1 {
   margin: 12px 0 14px;
@@ -1498,3 +1505,11 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
 .post-body p > .katex-display { text-indent: 0; margin: 1em 0; }
 .post-body .katex { font-size: 1em; }
 .post-body .katex-display > .katex { display: inline-block; }
+/* KaTeX 渲染失败回退：保留原文 + 红色虚线，便于人眼识别 */
+.katex-error {
+  color: #c0392b;
+  border-bottom: 1px dashed #c0392b;
+  padding: 0 2px;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.95em;
+}
