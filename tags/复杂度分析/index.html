@@ -21,7 +21,13 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=e17dc431">
+<link rel="stylesheet" href="/Blog/css/style.css?v=6f86cf7e">
+
+<!-- KaTeX（数学公式渲染） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+        onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
 
 <script>
   (function () {
@@ -88,8 +94,8 @@
 
   <section class="topics-hero">
     <div class="wrap">
-      <div class="crumb" style="margin-bottom:12px"><a href="/Blog/">首页</a> / <a href="/Blog/tags/">标签</a> / 字节码</div>
-      <h1>#字节码</h1>
+      <div class="crumb" style="margin-bottom:12px"><a href="/Blog/">首页</a> / <a href="/Blog/tags/">标签</a> / 复杂度分析</div>
+      <h1>#复杂度分析</h1>
       <p>该标签下的全部文章。</p>
     </div>
   </section>
@@ -103,17 +109,17 @@
           
 <a class="post-card reveal" href="/Blog/2026/09/13/ae2-vm-jit/">
   <div class="post-meta">
-    <time datetime="2026-09-13T08:05:00.000Z">2026-09-13</time>
+    <time datetime="2026-09-13T08:30:00.000Z">2026-09-13</time>
     <span class="sep"></span>
-    <span>约 12 分钟</span>
+    <span>约 25 分钟</span>
     
       <span class="sep"></span>
       <span>编程</span>
     
   </div>
 
-  <h3>把 AE2 的合成树搬进虚拟机——一次从递归到 JIT 的折腾记录</h3>
-  <p class="excerpt">最早发现 AE2 原版合成算法不对劲，是在我往 ME 网络里塞了第 7 层嵌套样板的那个晚上。 我只是想算一下 64m 量子存储元件要多少原料，结果点下”开始合成”之后，进度条卡在 0% 整整 90 秒，CPU 占用 1…</p>
+  <h3>AE2 合成计算的 VM 化与 JIT 化——递归算法的形式化分析与替代构造</h3>
+  <p class="excerpt">本文对 AE2-VM 项目中合成计算引擎的算法骨架进行形式化重述。目标：(1) 证明 AE2 原版递归合成算法在最坏情形下的指数级复杂度下界；(2) 给出栈式虚拟机的字节码语义；(3) 证明递归算法与 VM 在无自引用情…</p>
 
   <div class="post-foot">
     
