@@ -21,51 +21,11 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
+<link rel="stylesheet" href="/Blog/css/style.css?v=c89774fa">
 
-<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'no-math',
-      processHtmlClass: 'has-math'
-    },
-    svg: { fontCache: 'global' },
-    startup: {
-      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
-    }
-  };
-</script>
-<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
-<script>
-(function () {
-  var SOURCES = [
-    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
-    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
-  ];
-  function tryLoad(i) {
-    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = SOURCES[i];
-    s.onload = function () {
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
-      }
-    };
-    s.onerror = function () { tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- KaTeX CSS（公式已在 build 时由 markdown-it-katex 预渲染为静态 HTML，这里只加载样式） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
 
 <script>
   (function () {
@@ -170,10 +130,9 @@
           
         </header>
 
-        <div class="post-body has-math">
+        <div class="post-body">
           <p>我记忆中的盛夏，永远留在了那一年。</p>
 <span id="more"></span>
-
 <p>盛夏不仅仅是一个夏天，是我能在那个夏天中感受到的快乐，温暖，是在冰冷的砖墙屋瓦下，机械度日，毫无生机的情况下，所仅能感受到的温暖。</p>
 <p>她去世了，说来算得上是我的姐姐，虽然没有血亲，但在我心里却有着属于她的一席之地。她很开朗，像春日的暖阳，像水面上跃动的小金鱼，像微风中飘散的蒲公英。她自小体弱多病，不愿向我透露过多的病症，病痛不是她的苦难，反而成了她释放善念的源头。人常说，与病魔交战需要很大的勇气，那她应该也是有的。在和她日常交流中，完全见不到她的苦闷，她总是充满活力，充满幻想，仿佛是个来自梦境中的小孩，对万物充满了好奇，充满了兴趣。</p>
 <p>我们是在朋友介绍下相识的，相识在寒冬，与朋友争辩时，认识了这位，思想世界精妙绝伦我的姐姐。她的思想似乎与众不同，常人的视角对她来说微不足道，她经常将自身看得十分渺小，浩如烟海中的一粟，数不清的繁星中的一颗。她问过我，你的愿望是什么。相比常人的愿望，她却仅仅想多见一见这个世界，这个多姿多彩，无边无际的世界。</p>

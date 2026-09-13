@@ -21,51 +21,11 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
+<link rel="stylesheet" href="/Blog/css/style.css?v=c89774fa">
 
-<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'no-math',
-      processHtmlClass: 'has-math'
-    },
-    svg: { fontCache: 'global' },
-    startup: {
-      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
-    }
-  };
-</script>
-<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
-<script>
-(function () {
-  var SOURCES = [
-    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
-    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
-  ];
-  function tryLoad(i) {
-    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = SOURCES[i];
-    s.onload = function () {
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
-      }
-    };
-    s.onerror = function () { tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- KaTeX CSS（公式已在 build 时由 markdown-it-katex 预渲染为静态 HTML，这里只加载样式） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
 
 <script>
   (function () {
@@ -170,10 +130,9 @@
           
         </header>
 
-        <div class="post-body has-math">
+        <div class="post-body">
           <p>我叫顽皮，是个能独立思考的木偶，在镇上，邻居们都喜欢叫我小顽皮。</p>
 <span id="more"></span>
-
 <p>今天，我按照设定的时间醒来，看了看一旁熟睡的木匠爷爷，我熟练地去准备早餐。是木匠爷爷创造了我，某天他突发奇想，在萤火虫森林里找到了一棵散发着奇异光芒的原木为我打造了四肢，并且用他珍藏多年的蓝宝石为我制作眼睛，这种神奇的材料使我的身躯变得坚不可摧，我很感激木匠爷爷。</p>
 <p>“早啊，小顽皮。”，门外的阿布叔叔向我问好。阿布叔叔是个好人，经常帮木匠爷爷搬运家具。</p>
 <p>我机械地点点头，向阿布叔叔示意，阿布叔叔笑了笑向街角走去。</p>
@@ -182,14 +141,14 @@
 <p>“早安，爷爷。”</p>
 <p>木匠爷爷用餐结束后，笑着招招手，用毛巾将我身上的污垢擦拭后放心地回到了书房。木匠爷爷，每天都在书房中看书，因为口碑很不错，偶尔会接到邻居们的订单制作新的家具，然后请阿布叔叔把新家具运送到家中。</p>
 <p>我收拾好餐具，按设定背着背篓去赶集，在集市上购买未来一周家中需要用到的物资，顺便把木匠爷爷新制作的小玩意送给邻居们。</p>
-<p>在集市上，邻居们都很热心地向我打招呼，”小顽皮今天过得怎么样？”，我机械般的点点头，虽然我很想向邻居们展现出阳光的一面，但是我的躯干却只能做到如此，但邻居们乐此不疲。</p>
+<p>在集市上，邻居们都很热心地向我打招呼，“小顽皮今天过得怎么样？”，我机械般的点点头，虽然我很想向邻居们展现出阳光的一面，但是我的躯干却只能做到如此，但邻居们乐此不疲。</p>
 <p>随着阳光渐渐消散，熙熙攘攘的人群也稀疏起来，我背着背篓踏向了回家的路上。黄昏的萤火虫森林已经开始泛出点点亮光，神秘幽邃。仔细观看，无论亮光在何处，始终无法脱离森林的范围。</p>
 <p>等我来到街角，天色已经完全暗了下来，我看到尽头的巷子里，阿布叔叔好像和纽扣阿姨说着什么，我没能停下，只能压下心中的好奇回到了木匠爷爷家中。</p>
 <p>书房灯火通明，已经很晚了，木匠爷爷还没有休息，早已超出设定的时间，我很奇怪，我想要进去查看一番，但只能回到床上休息。</p>
-<p>第二天早上，书房的灯依旧亮着，我很奇怪昨天发生了什么？但我依旧我熟悉地去准备早饭，在窗边，阿布叔叔手中拿着一把斧子，看上去有些生锈，阿布叔叔向我打招呼：”早啊，小顽皮。”，我机械般的点点头。</p>
+<p>第二天早上，书房的灯依旧亮着，我很奇怪昨天发生了什么？但我依旧我熟悉地去准备早饭，在窗边，阿布叔叔手中拿着一把斧子，看上去有些生锈，阿布叔叔向我打招呼：“早啊，小顽皮。”，我机械般的点点头。</p>
 <p>我准备好早餐，在窗边等待。到了时间依旧没有看到木匠爷爷，我只能将餐具重新处理好放回原处。背着空背篓去集市。</p>
 <p>今天没有木匠爷爷的小东西，我也不需要买必需品，但人们依旧在和我打招呼。我很奇怪。</p>
-<p>日落后我沿着原路返回，在回家途中好像看到阿布叔叔在和纽扣阿姨缠绵，我听到了，纽扣阿姨说的是：”你的老婆和那个老头的尸体怎么办？”，我没听懂，也没能停下继续倾听，只能向木匠爷爷家走去。</p>
+<p>日落后我沿着原路返回，在回家途中好像看到阿布叔叔在和纽扣阿姨缠绵，我听到了，纽扣阿姨说的是：“你的老婆和那个老头的尸体怎么办？”，我没听懂，也没能停下继续倾听，只能向木匠爷爷家走去。</p>
 <p>今晚木匠爷爷的书房灯火通明，我很好奇，但只能回到床上休息。</p>
 <p>第三天早上，我熟悉地去准备早餐。看着书房的灯光，我不记得昨天发生了什么，但木匠爷爷没有按时出现我很奇怪。</p>
 <p>“早啊，小顽皮。”，门外的阿布叔叔向我问好。阿布叔叔是个好人，经常帮木匠爷爷搬运家具。</p>

@@ -21,51 +21,11 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
+<link rel="stylesheet" href="/Blog/css/style.css?v=c89774fa">
 
-<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'no-math',
-      processHtmlClass: 'has-math'
-    },
-    svg: { fontCache: 'global' },
-    startup: {
-      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
-    }
-  };
-</script>
-<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
-<script>
-(function () {
-  var SOURCES = [
-    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
-    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
-  ];
-  function tryLoad(i) {
-    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = SOURCES[i];
-    s.onload = function () {
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
-      }
-    };
-    s.onerror = function () { tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- KaTeX CSS（公式已在 build 时由 markdown-it-katex 预渲染为静态 HTML，这里只加载样式） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
 
 <script>
   (function () {
@@ -170,10 +130,9 @@
           
         </header>
 
-        <div class="post-body has-math">
+        <div class="post-body">
           <p>年轮，一首我很喜欢的音乐。时间好似年轮，在我的身躯上静静流淌，划下一圈又一圈的沧桑。最初也是通过这首歌曲认识到，人所具有的，独特的情感。当时听这首歌曲时，还分不清复杂的弯弯绕绕，那时我眼中的世界还是一片光鲜亮丽，也不懂所谓的爱恨，当时吸引我的是那其中，浓郁的，不可言说的，孤独。</p>
 <span id="more"></span>
-
 <p>年轮，把我围在了中间，这狭小，阴暗的空间，除了自己再容不下其他。每当指尖不甘地去触碰年轮，都会发觉一阵刺痛，久而久之也就不再去触碰了，不想，也不敢。厚重的年轮，把我围了起来，似是密不透风，却又在这小地方见一年四季。我听不到外面的声响，却能看到外面四季如春，仿若我与世隔绝，无论怎么招手，也不会触碰到属于我的那把，打开年轮的钥匙。</p>
 <p>寒夜我一个人，在年轮里一遍，一遍地打转，不是无聊，我在思考，如何拥抱我的阳光。许是命运，原本厚重的年轮逐渐变得稀疏，凌乱。密不透风的障壁竟露出丝丝月光，我欣喜若狂。我祈求着，寄希望于上苍，让这年轮变得脆弱，让它稀松，让它消失。我也不知为什么，对年轮外竟是如此渴求，如此盼望。可能在幻想着，幻想着四季如春的绿意，幻想着温暖和煦的阳光。可能厌倦了，厌倦了一个人的寒夜，厌倦了这年轮。</p>
 <p>等啊等，年轮一圈，一圈地在我残破的身躯上划着，渐渐变淡，终于有一天，它不见了。连带着我期待的四季如春一同消失，无影无踪。我不明白，为什么？会这样。我只能眼见着，日日的祈求，化作泡影，而身边剩下的，仍旧是那陪伴我的，熟悉的月光，寒夜。</p>

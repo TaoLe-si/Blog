@@ -21,51 +21,11 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
+<link rel="stylesheet" href="/Blog/css/style.css?v=c89774fa">
 
-<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'no-math',
-      processHtmlClass: 'has-math'
-    },
-    svg: { fontCache: 'global' },
-    startup: {
-      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
-    }
-  };
-</script>
-<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
-<script>
-(function () {
-  var SOURCES = [
-    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
-    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
-  ];
-  function tryLoad(i) {
-    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = SOURCES[i];
-    s.onload = function () {
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
-      }
-    };
-    s.onerror = function () { tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- KaTeX CSS（公式已在 build 时由 markdown-it-katex 预渲染为静态 HTML，这里只加载样式） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
 
 <script>
   (function () {
@@ -170,13 +130,12 @@
           
         </header>
 
-        <div class="post-body has-math">
-          <p>be，一个较为现代的简称，原指 bad ending，现在一般引申为某种意难平。大概是四五年前，似乎流行过一阵 be 美的浪潮：爱意随风起，风止意难平，但那种做作的，刻意追求的所谓的”be 美”，距离真正的美，还是差距甚远的。</p>
+        <div class="post-body">
+          <p>be，一个较为现代的简称，原指 bad ending，现在一般引申为某种意难平。大概是四五年前，似乎流行过一阵 be 美的浪潮：爱意随风起，风止意难平，但那种做作的，刻意追求的所谓的&quot;be 美&quot;，距离真正的美，还是差距甚远的。</p>
 <span id="more"></span>
-
 <p>一年一年，社会的风气在不断变化，似乎，人们的审美开始降级了，从最开始追求的淳朴，到了现在的物质至上。家里的老人常说曾经夜不闭户，而现在剩下的是一张张的法院传票。曾经追求的美，是《红楼》，如今的主流却只剩千篇一律的皮囊。我没有权利去评判，但是我精神世界的贫瘠，使我愈发焦虑，犹如被困在一片迷雾中，不知方向。闲暇时间，我找来宫部美雪和东野圭吾的书籍，于是回想起曾经的我，最热爱的 be 美。</p>
-<p>be 的美，不是能追求到的。美在内核，而不在身形。所谓的”圆满”，只会出现在善良的童话中，而我不是司马相如，也不可能遇到我的卓文君，be 的美，恰恰激发了人心中这种意难平，久久回味，每次看一遍故事都能体会到其中不同的韵味。在创作中，刻意去追求，反而适得其反。be 的美，是意难平，而不是其他的。无论是爱恨情仇，还是生老病死，总有一种内核是意难平的。人的情感会不自觉的勾起，去深深地体会，这其中，只有你自己能够感受到的，独一无二的情感。一遍又一遍，享受着情绪的冲刷，在自己的思想里游荡。只有这种彻底的放松，才能洗去我尘世的污泥。</p>
-<p>生活中处处是 be，其实这种思想早在小学就已经深深刻在我的灵魂中，”金无足赤，人无完人”，诸如此类，生活中的十全十美可太少见了，”人有悲欢离合，月有阴晴圆缺”，古人深深地认识到这种 be 的不可抗，与其深入苦海，不如自我救赎。每次在 be 的冲刷中，都是一次对自我的救赎，似乎是亲身经历，又好像在给自己做一种选择。be 的美，令我深深陶醉。</p>
+<p>be 的美，不是能追求到的。美在内核，而不在身形。所谓的&quot;圆满&quot;，只会出现在善良的童话中，而我不是司马相如，也不可能遇到我的卓文君，be 的美，恰恰激发了人心中这种意难平，久久回味，每次看一遍故事都能体会到其中不同的韵味。在创作中，刻意去追求，反而适得其反。be 的美，是意难平，而不是其他的。无论是爱恨情仇，还是生老病死，总有一种内核是意难平的。人的情感会不自觉的勾起，去深深地体会，这其中，只有你自己能够感受到的，独一无二的情感。一遍又一遍，享受着情绪的冲刷，在自己的思想里游荡。只有这种彻底的放松，才能洗去我尘世的污泥。</p>
+<p>生活中处处是 be，其实这种思想早在小学就已经深深刻在我的灵魂中，“金无足赤，人无完人”，诸如此类，生活中的十全十美可太少见了，“人有悲欢离合，月有阴晴圆缺”，古人深深地认识到这种 be 的不可抗，与其深入苦海，不如自我救赎。每次在 be 的冲刷中，都是一次对自我的救赎，似乎是亲身经历，又好像在给自己做一种选择。be 的美，令我深深陶醉。</p>
 <p>我喜欢 be 的美，我喜欢这种可以肆无忌惮地沉醉在自己世界中的感觉，不断去探求自己的真知，探求自己内心的欲望，在一遍遍遨游中不断救赎，不断释放。</p>
 
         </div>

@@ -21,51 +21,11 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=5fd31b82">
+<link rel="stylesheet" href="/Blog/css/style.css?v=c89774fa">
 
-<!-- MathJax v3（数学公式渲染，比 KaTeX 容错更强，国内 CDN 覆盖好） -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath:  [['$',  '$'],  ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'no-math',
-      processHtmlClass: 'has-math'
-    },
-    svg: { fontCache: 'global' },
-    startup: {
-      typeset: false  // 手动触发，避免与 PJAX / 异步内容冲突
-    }
-  };
-</script>
-<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
-<script>
-(function () {
-  var SOURCES = [
-    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
-    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
-  ];
-  function tryLoad(i) {
-    if (i >= SOURCES.length) { console.warn('MathJax: 所有 CDN 不可用'); return; }
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = SOURCES[i];
-    s.onload = function () {
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
-      }
-    };
-    s.onerror = function () { tryLoad(i + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- KaTeX CSS（公式已在 build 时由 markdown-it-katex 预渲染为静态 HTML，这里只加载样式） -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
 
 <script>
   (function () {
@@ -170,10 +130,9 @@
           
         </header>
 
-        <div class="post-body has-math">
+        <div class="post-body">
           <p>我醒了？不，或许吧。</p>
 <span id="more"></span>
-
 <p>哦，不！我的奥菲利亚，你在哪里，你去了何方？是那遥远的丹麦海岸，还是那邪恶王座之下熊熊烈火炙烤之上的苍白大地。哦，我的奥菲利亚！你是多么美丽迷人，我的手里还有着一封我亲笔书写的书信，我要把它亲手交给你，再为你在王城月光下放声朗诵。哦，我伟大的父皇，我想邀您见证，我哈姆雷特亲手奉上这封真挚情感的时刻。</p>
 <p>哦，我的奥菲利亚！你是多么美丽迷人，注视你的一瞬，我便沉迷在你那宝石般的双目中。上帝赐予了你一双灵动慧目，能够看破那腐朽的恶毒的伪装。奥菲利亚，我想邀你同我一路，在通往无上皇位的途中，消灭那些虚伪的灵魂，同我一路祭奠我的父皇。</p>
 <p>哦，我的奥菲利亚！上帝给予了你美貌容颜。你的笑容永远留在了丹麦王城，我还从未欣赏过如此美丽迷人的姑娘。哦，我伟大的父皇，我想邀您见证，我即将与这位美丽的姑娘缔结婚姻，就如同您当年一样。</p>
