@@ -714,8 +714,8 @@ img { max-width: 100%; }
 .crumb { font-size: 13.5px; color: var(--text-mute); }
 .crumb a:hover { color: var(--accent); }
 
-.post-body { font-size: 16.5px; }
-.post-body > p { margin: 0 0 20px; }
+.post-body { font-size: 17.5px; line-height: 2; }
+.post-body > p { margin: 0 0 18px; text-indent: 2em; }
 .post-body h2 {
   margin: 42px 0 14px;
   padding-bottom: 10px;
