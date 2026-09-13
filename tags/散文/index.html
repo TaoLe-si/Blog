@@ -21,13 +21,62 @@
 <link rel="alternate" href="/Blog/atom.xml" title="桃" type="application/atom+xml">
 
 
-<link rel="stylesheet" href="/Blog/css/style.css?v=6f86cf7e">
+<link rel="stylesheet" href="/Blog/css/style.css?v=3bc43213">
 
-<!-- KaTeX（数学公式渲染） -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
-        onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<!-- KaTeX（数学公式渲染）：国内 CDN 优先，国际 CDN 兜底 -->
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/katex.min.css" crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';">
+<script>
+(function () {
+  // CDN 链：bootcdn（国内）→ staticfile（360，国内）→ jsdelivr（国际）
+  var CDNS = [
+    'https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.11/',
+    'https://cdn.staticfile.org/KaTeX/0.16.11/',
+    'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/'
+  ];
+  function loadScript(src, cb) {
+    var s = document.createElement('script');
+    s.defer = true;
+    s.crossOrigin = 'anonymous';
+    s.onload = function () { cb(true); };
+    s.onerror = function () { cb(false); };
+    s.src = src;
+    document.head.appendChild(s);
+  }
+  function tryCdn(i, file, cb) {
+    if (i >= CDNS.length) return cb(false);
+    loadScript(CDNS[i] + file, function (ok) {
+      if (ok) cb(CDNS[i]); else tryCdn(i + 1, file, cb);
+    });
+  }
+  function runAutoRender() {
+    if (typeof renderMathInElement !== 'function') return;
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$',  right: '$',  display: false },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false,
+      errorCallback: function (msg, err) { console.warn('KaTeX error:', msg); }
+    });
+  }
+  // 先 katex.js，再 auto-render
+  tryCdn(0, 'katex.min.js', function (base) {
+    if (!base) { console.warn('KaTeX: 所有 CDN 均不可用，公式将以源码形式显示'); return; }
+    var i = CDNS.indexOf(base);
+    tryCdn(i, 'contrib/auto-render.min.js', function (ok) {
+      if (!ok) return;
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runAutoRender);
+      } else {
+        runAutoRender();
+      }
+    });
+  });
+})();
+</script>
 
 <script>
   (function () {
@@ -188,9 +237,9 @@
       <span class="chip chip-accent">文学</span>
     
     
-      <span class="chip">随笔</span>
+      <span class="chip">散文</span>
     
-      <span class="chip">思考</span>
+      <span class="chip">随笔</span>
     
     <span class="read-more">阅读全文
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
@@ -219,9 +268,9 @@
       <span class="chip chip-accent">文学</span>
     
     
-      <span class="chip">随笔</span>
+      <span class="chip">散文</span>
     
-      <span class="chip">思考</span>
+      <span class="chip">随笔</span>
     
     <span class="read-more">阅读全文
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
