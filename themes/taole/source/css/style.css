@@ -122,15 +122,23 @@ img { max-width: 100%; }
   white-space: nowrap;
 }
 .brand-mark {
-  display: grid;
-  place-items: center;
+  display: block;
+  flex: none;
   width: 32px;
   height: 32px;
-  border-radius: 9px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-soft);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.brand:hover .brand-mark {
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 1px var(--accent);
 }
 .brand-text small {
   display: block;
@@ -882,8 +890,9 @@ figure.highlight pre {
 /* ---------------- Footer ---------------- */
 
 .site-footer {
-  border-top: 1px solid var(--line);
-  background: var(--bg-soft);
+  /* 透明：让 body 底色 / 首页背景图透上来 */
+  border-top: 0;
+  background: transparent;
   padding: 40px 0;
 }
 .footer-inner {
@@ -1236,6 +1245,11 @@ figure.highlight pre {
   background: rgba(255, 255, 255, .16);
 }
 .has-page-bg .empty { color: rgba(255, 255, 255, .72); border-color: rgba(255, 255, 255, .2); }
+
+/* 页脚已透明，直接压在背景图上，文字必须跟 hero / pager 一样转浅色 */
+.has-page-bg .footer-inner { color: rgba(255, 255, 255, .7); }
+.has-page-bg .site-footer a { color: rgba(255, 255, 255, .86); }
+.has-page-bg .site-footer a:hover { color: #fff; }
 
 /* 头像卡片玻璃化，同时作为彩蛋热区（不设 pointer 光标，避免暴露） */
 .has-page-bg .hero-side {

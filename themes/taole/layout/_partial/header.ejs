@@ -2,7 +2,15 @@
   <div class="wrap">
     <nav class="nav">
       <a class="brand" href="<%- url_for('/') %>">
-        <span class="brand-mark">桃</span>
+        <span class="brand-mark">
+          <%# 走 GitHub 直链，改头像能自动同步；onerror 兜到主题内置图（两者同源，
+              切过去无感），避免 github.com 抽风时顶栏空一块 %>
+          <img class="brand-avatar"
+               src="<%- avatar_url(128) %>" width="32" height="32"
+               alt="<%= config.author || config.title %>"
+               decoding="async" fetchpriority="high" referrerpolicy="no-referrer"
+               onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='<%- url_for('/images/avatar.jpg') %>';}">
+        </span>
         <span class="brand-text"><%= config.title %><small><%= theme.signature %></small></span>
       </a>
 
