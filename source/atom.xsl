@@ -25,6 +25,12 @@
         <meta charset="UTF-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <meta name="robots" content="noindex"/>
+        <!-- 这个页面是 XSL 直接吐出来的 HTML，没走主题的 head.ejs。
+             不写 favicon 的话浏览器会回退去请求站点根目录的 /favicon.ico
+             （GitHub 用户站的根是 taole-si.github.io/，不是 /Blog/），
+             那里没有文件，控制台就会多一条 404。这里用和 head.ejs 同款的
+             内联 data URI 图标，顺手也让它更像一个正经页面。 -->
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%235b5bd6'/%3E%3Ctext x='32' y='44' font-size='34' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E%E6%A1%83%3C/text%3E%3C/svg%3E"/>
         <title>订阅源 · <xsl:value-of select="atom:feed/atom:title"/></title>
         <style>
           :root {
