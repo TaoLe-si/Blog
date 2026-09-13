@@ -1,189 +1,383 @@
 ---
-title: AE2 合成计算的 VM 化与 JIT 化——递归算法的形式化分析与替代构造
+title: AE2 合成计算的 VM 化与 JIT 化
 date: 2026-09-13 16:30:00
+tech: true
 categories:
   - 编程
 tags:
   - 虚拟机
   - JIT
+  - Mixin
   - 形式化
-  - 复杂度分析
   - AE2
   - Minecraft
-description: 用形式化方法证明递归合成树在最坏情形下具有指数级复杂度，并给出栈式 VM 与 JIT 缓存的等价构造与加速比定理。
+description: 从 AE2-VM 的 Mixin 入口与闪电库（Thunderbolt Core）的版本化兼容讲起，再用形式化方法说明递归合成树的指数下界，以及栈式 VM / JIT 的等价构造。
 ---
 
-本文对 [AE2-VM](https://github.com/TaoLe-si/AE2-VM) 项目中合成计算引擎的算法骨架进行形式化重述。目标：(1) 证明 AE2 原版递归合成算法在最坏情形下的指数级复杂度下界；(2) 给出栈式虚拟机的字节码语义；(3) 证明递归算法与 VM 在无自引用情形下的语义等价性；(4) 给出三种 JIT 优化（子样板内联、消耗次数缩放、跨请求缓存）的正确性定理与加速比。
+本文对应 [AE2-VM](https://github.com/TaoLe-si/AE2-VM) 的源码。模组把 AE2 原版的递归合成树遍历换成栈式虚拟机执行编译后的字节码。下面分两块写：先指出 Mixin 挂在哪、**和 ECO 的兼容实际交给闪电库处理**（1.20.1 / 1.21.1 有版本要求，26.1 目前没有措施），再用形式化语言把算法骨架讲清楚。
 
 <!-- more -->
 
-## 1. 符号与定义
+## 1. Mixin 接管点与冲突面
 
-令 $\mathcal{I}$ 为物品集合，$\mathcal{P}$ 为配方集合。$\mathbb{Z}_{>0}$ 为正整数集，$\mathbb{Z}_{\geq 0}$ 为非负整数集。
+整个模组只有三个 Mixin，全部写在 `src/main/resources/ae2vm.mixins.json` 里，并且 `remap = false`——目标是 AE2 自己的类名，不是 Minecraft 的混淆名。
 
-**定义 1.1（配方 Pattern）**。配方 $P \in \mathcal{P}$ 是一个五元组
-$$P = (I_P, O_P, \sigma_P, \rho_P, \delta_P)$$
-其中
-- $I_P = \{(i_1, c_1), \ldots, (i_m, c_m)\}$，$i_j \in \mathcal{I}$，$c_j \in \mathbb{Z}_{>0}$，为有限多重输入集；
-- $O_P = \{(o_1, d_1), \ldots, (o_n, d_n)\}$，$o_k \in \mathcal{I}$，$d_k \in \mathbb{Z}_{>0}$，为有限多重输出集；
-- $\sigma_P : I_P \to 2^{\mathcal{I}}$，替换映射（空函数表示无替换槽）；
-- $\rho_P : I_P \to \{\mathrm{exact}, \mathrm{sub}\}$，槽位类型；
-- $\delta_P \in \mathbb{Z}_{\geq 0} \cup \{\infty\}$，有限次使用参数（耐久工具）。
+```json
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.ae2vm.addon.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "CraftingServiceMixin",
+    "PatternProviderLogicMixin",
+    "CraftingSimulationStateAccessor"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}
+```
 
-**定义 1.2（合成请求 Crafting Request）**。合成请求是三元组
-$$R = (I^*, N, S)$$
-其中 $I^* \in \mathcal{I}$ 是目标物品，$N \in \mathbb{Z}_{>0}$ 是期望数量，$S : \mathcal{I} \to \mathbb{Z}_{\geq 0}$ 是网络库存函数。
+`defaultRequire: 1` 的实际作用：注入点对不上（AE2 改了方法签名、换了版本）时，**游戏直接启动失败**，而不是静默跳过。这是版本锁。
 
-**定义 1.3（合成树 Crafting Tree）**。给定请求 $R$，合成树是有根带标号 DAG
-$$T = (V, E, \lambda)$$
-满足
-- $V = V_{\mathrm{int}} \cup V_{\mathrm{leaf}}$；
-- 内部节点 $v \in V_{\mathrm{int}}$ 标记 $\lambda(v) = (P_v, m_v)$，$P_v \in \mathcal{P}$，$m_v \in \mathbb{Z}_{>0}$ 为执行次数；
-- 叶节点 $v \in V_{\mathrm{leaf}}$ 标记 $\lambda(v) = (i_v, c_v)$，$i_v \in \mathcal{I}$，$c_v \in \mathbb{Z}_{>0}$；
-- 边 $(v, w)$ 表示 $w$ 的产出被 $v$ 的某输入消耗。
+冲突面分两层：Mixin 只负责挂上 AE2 自己的入口；和 ECO 等附属的共存，在 1.20.1 / 1.21.1 上已经交给闪电库（Thunderbolt Core）做引擎路由，不再靠 Mixin `order` 互抢。26.1 这条线目前没有对应措施。没走闪电库、自己再打同一入口的模组，仍然可能把兼容打坏。
 
-**定义 1.4（递归算法 $\mathcal{A}_{\mathrm{rec}}$）**。给定请求 $R = (I^*, N, S)$：
-1. 若 $S(I^*) \geq N$，返回 $(\mathrm{use\text{-}stock}, I^*, N)$；
-2. 否则取 $P$ 使 $I^* \in O_P$ 且 $I^*$ 为 $P$ 的主输出，记 $d$ 为 $I^*$ 在 $O_P$ 中的重数；
-3. 令 $k = \lceil N / d \rceil$；
-4. 对每个 $(i, c) \in I_P$，递归调用 $\mathcal{A}_{\mathrm{rec}}(i, c \cdot k, S')$，其中 $S' = S - \mathrm{used}$；
-5. 返回 $(\mathrm{craft}, P, k)$ 与子调用结果的并。
+### 1.1 `CraftingServiceMixin`：AE2 的计算入口
 
-**定义 1.5（字节码 Bytecode）**。字节码程序是有限序列
-$$\pi = [o_0, o_1, \ldots, o_{|\pi|-1}]$$
-其中每个 $o_i$ 来自指令集
-$$\Sigma = \{\mathrm{PUSH\_ITEM}, \mathrm{PUSH\_LONG}, \mathrm{ADD}, \mathrm{SUB}, \mathrm{MUL}, \mathrm{DIV\_ROUNDUP}, \mathrm{EXTRACT\_INGREDIENT}, \mathrm{RECORD\_OUTPUT}, \mathrm{RECORD\_MISSING}, \mathrm{DUP}, \mathrm{POP}, \mathrm{SWAP}, \mathrm{RECORD\_PATTERN}, \mathrm{CALL}, \mathrm{RETURN}, \mathrm{CALL\_BY\_KEY}, \mathrm{INSERT\_OUTPUT}, \mathrm{CATALYST\_SEED}, \mathrm{DURABILITY\_TOOL}, \mathrm{FUZZY\_SLOT}, \mathrm{HALT}\}$$
-每条指令带操作数。
+目标方法：
 
-**定义 1.6（VM 状态）**。VM 状态是四元组
-$$\sigma = (\pi, pc, s, m)$$
-其中 $\pi$ 是当前程序，$pc \in \mathbb{N}$ 是程序计数器，$s : \mathbb{N} \to \mathbb{Z}$ 是 BigInteger 栈（$s(0)$ 为栈顶），$m : \mathcal{I} \to \mathbb{Z}_{\geq 0}$ 是当前构造中的计划表。
+`appeng.me.service.CraftingService#beginCraftingCalculation`
 
-**定义 1.7（VM 转移函数 $\delta$）**。对关键指令给出形式语义（其余类似）：
+这是 AE2 **自身**合成计算的入口。终端点合成、接口请求最终会进这里。AE2-VM 在方法最开头（`HEAD`）注入，并且可以取消原方法：
 
-| 指令 | 操作 |
-|------|------|
-| $\mathrm{PUSH\_ITEM}(i, c)$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, s \circ [c], m)$ |
-| $\mathrm{ADD}$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, (s \circ [s(0) + s(1)]) \setminus [s(0), s(1)], m)$ |
-| $\mathrm{MUL}$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, (s \circ [s(0) \cdot s(1)]) \setminus [s(0), s(1)], m)$ |
-| $\mathrm{EXTRACT\_INGREDIENT}$ | $S(i) \leftarrow S(i) - s(0)$，记录 $m(i) \leftarrow m(i) + s(0)$ |
-| $\mathrm{CALL}(P)$ | 保存当前帧，跳转到 $\mathcal{C}(P)$ 的入口 |
-| $\mathrm{RETURN}$ | 恢复调用者帧 |
-| $\mathrm{HALT}$ | 终止，输出 $m$ |
+```java
+/**
+ * 顶层 mixin。1.21.1 NeoForge 的 Mixin 支持 order；
+ * Forge 47（1.20.1）捆绑 Mixin 0.8.5，@Inject 没有 order 属性，
+ * 不能写 order=100（编译期报错，运行期也会被忽略）。
+ * 1.20.1 若要卡注入先后，只能走 mixin 配置的 priority。
+ */
+@Inject(method = "beginCraftingCalculation", at = @At("HEAD"), cancellable = true)
+private void vmBeginCraftingCalculation(...) { ... }
+// 1.21.1 可再加 order = 100；1.20.1 Forge 的 Mixin 0.8.5 没有这个属性。
+```
 
-**定义 1.8（编译 $\mathcal{C}$）**。对配方 $P$ 的编译 $\mathcal{C}(P)$ 是结构归纳定义的字节码：对每个输入 $(i, c) \in I_P$ 生成「压入 $c$、压入 amount、调用子样板字节码」序列，最后追加 $\mathrm{RECORD\_OUTPUT}, \mathrm{RETURN}$。
+`cancellable = true` + `HEAD` 的实际作用：原方法一行都没跑之前，就可以把返回值换成 VM 的 `Future`。这是加速来源，也是**未走闪电库的第三方**一旦同样注入这个方法，仍可能互相覆盖的原因。
 
-## 2. 递归算法的复杂度
+源码用四道闸决定「这条请求要不要由 VM 算」：
 
-**定理 2.1（递归下界）**。令 $T(n, d)$ 表示 $\mathcal{A}_{\mathrm{rec}}$ 在 $n$ 节点、深度 $d$ 的合成树上的时间复杂度。则
+```java
+if (!AE2VMConfig.isProxyEnabled()) {
+    return; // 配置关掉：当没装 VM
+}
+if (VM_FALLBACK.get()) {
+    return; // 正在回退原生，禁止重入
+}
+if (cir.isCancelled()) {
+    return; // 已有更早的 HEAD mixin 接管，让路
+}
+if (isUnregisteredThirdPartyRequester(simRequester)) {
+    // 未 opt-in 的第三方 requester → 不接管
+    VM_FALLBACK.set(Boolean.TRUE);
+    try {
+        cir.setReturnValue(((CraftingService) (Object) this)
+            .beginCraftingCalculation(level, simRequester, what, amount, strategy));
+        cir.cancel();
+    } finally {
+        VM_FALLBACK.remove();
+    }
+    return;
+}
+```
+
+| 闸门 | 实际作用 |
+|------|----------|
+| `proxy.enabled=false` | Mixin 还在，但不 `cancel` |
+| `VM_FALLBACK` | 回退原版时必须穿过本 Mixin，否则死递归 |
+| `cir.isCancelled()` | 别人已经接管，VM 不再覆盖 |
+| 未注册第三方 | 类名不是 `appeng.*`、又没 `AE2VMCraftingRegistry.register()` → 把入口还回去 |
+
+通过闸门后：
+
+```java
+var vmFuture = AE2VMCrafting.calculate(grid, simRequester, what, amount, strategy)
+    .handle((plan, ex) -> { /* VM 编不了则原生回退 */ ... });
+cir.cancel();
+cir.setReturnValue(vmFuture);
+```
+
+`calculate()` 在后台线程跑，不堵服务器主线程。这只覆盖 **AE2 自己发起的请求**。ECO 不再靠「谁的 Mixin order 更小」来抢这一行。
+
+### 1.2 闪电库：1.20.1 / 1.21.1 的共用引擎路由
+
+和 ECO（NeoECOAE）的共存，现在走 [Thunderbolt Core](https://www.mcmod.cn/class/29226.html)（闪电库）的合成规划引擎 API，而不是两边都 `HEAD` 注入 `beginCraftingCalculation`。
+
+闪电库提供 `com.moakiee.thunderbolt.api.crafting` 这一套共用表面（`CraftingPlanningEngine`、`CraftingPlanningEngines`、`PlanningRequest` 等）。AE2-VM 作为其中一个引擎挂上去，ECO 等附属走同一张注册表。玩家用 `/thunderbolt engine ae2vm` 选中后，请求由闪电库路由过来，而不是 Mixin 互 `cancel`。
+
+`1.20.1-forge` 上的注册（弱依赖，Thunderbolt 没装时整段不会碰到它的类）：
+
+```java
+public static void registerIfPresent() {
+    if (!isThunderboltLoaded() || registered) return;
+    // priority 900：低于闪电库 V2 默认的 1000，高于原版
+    CraftingPlanningEngines.register(
+        AE2VMBatchCraftingPlanner.INSTANCE,
+        900,
+        false);
+}
+```
+
+引擎本体实现 `CraftingPlanningEngine`。选中 `ae2vm` 后，闪电库调 `createSession` → `attempt`，里面再调公开 API；VM 处理不了就 `DECLINE`，闪电库试下一个引擎，最后回落到原版 AE2：
+
+```java
+public final class AE2VMBatchCraftingPlanner implements CraftingPlanningEngine {
+    public static final String ENGINE_ID = "ae2vm";
+
+    // attempt() 里：
+    var future = AE2VMCrafting.calculate(
+        grid, request.requester(), request.output(), amount, request.strategy());
+    ICraftingPlan plan = future.get(5, TimeUnit.MINUTES);
+    return plan instanceof CraftingPlan cp
+        ? PlanningAttempt.handled(cp)
+        : PlanningAttempt.DECLINE;
+}
+```
+
+没装闪电库时，行为回到 Mixin 直接接管所有 `appeng.*` 请求——这是默认路径，不是和 ECO 打架。
+
+**版本要求**（两套 MC 共用同一份 planning-engine API，但运行时 jar 必须对得上）：
+
+| 游戏版本 | 加载器 | 闪电库 | AE2-VM 侧 |
+|----------|--------|--------|-----------|
+| 1.20.1 | Forge 47 | Thunderbolt-Core **2.0.0-beta.1** 线（`1.20.1` 分支，带七字段 `api.crafting`） | `1.20.1-forge`：`registerIfPresent()` 有效 |
+| 1.21.1 | NeoForge 21.1 | 同样需要带 `CraftingPlanningEngine` 的 **2.0** 线（`compileOnly` 曾用 `thunderbolt-2.0-alpha.jar`） | `1.21.1-neoforge`：API 对得上才能注册 |
+| 26.1 | NeoForge 26.1 | **未移植**，没有这套引擎 API | `26.1.2-neoforge`：**目前无兼容措施** |
+
+版本对不上的后果写在 1.21.1 的 stub 里：运行时 classpath 上没有 `CraftingPlanningEngine` 时，类初始化会 `NoClassDefFoundError`，游戏直接崩。所以缺 jar、或闪电库还是不含引擎 API 的旧包时，不能硬链接，只能整包 stub 掉。
+
+```java
+// 1.21.1 v1.13.16+ / 26.1：包是空的
+// Thunderbolt 2.0.0-beta.1 absent from the runtime classpath
+// → NoClassDefFoundError: CraftingPlanningEngine → crash
+// To re-enable: restore sources, restore compileOnly on the matching jar,
+// uncomment ThunderboltCompat.registerIfPresent();
+```
+
+**26.1** 的注释更直接：1.21.1 那套 `ThunderboltCompat` / `AE2VMBatchCraftingPlanner` **没有移植过来**。这条线上闪电库不负责 ECO 路由，Mixin 也没有另一套替代协议——和 ECO 等附属同时装，属于未覆盖的兼容空白。
+
+即便 1.20.1 / 1.21.1 上闪电库版本正确，**没注册进引擎表、自己再 Mixin `beginCraftingCalculation` 的模组**仍然可以 `cancel` 掉 VM 的返回值，或在 VM `cancel` 之后覆盖 `Future`。闪电库只仲裁走了它的那些引擎，管不到旁路注入。
+
+### 1.3 `PatternProviderLogicMixin`：样板列表的 TAIL 竞争
+
+目标方法：`appeng.helpers.patternprovider.PatternProviderLogic#updatePatterns`，注入点是 **`TAIL`（方法即将返回时）**。
+
+```java
+@Shadow
+private List patterns;
+
+@Inject(method = "updatePatterns", at = @At("TAIL"))
+private void onUpdatePatterns(CallbackInfo ci) {
+    if (!AE2VMConfig.isProxyEnabled()) return;
+    if (this.patterns == null || this.patterns.isEmpty()) return;
+
+    for (IPatternDetails pattern : this.patterns) {
+        if (PatternCompiler.getCompiled(pattern) == null) {
+            PatternCompiler.compileIfAbsent(pattern);
+        }
+    }
+}
+```
+
+实际作用：样板写进供应器的那一刻，就把配方编译成字节码，缓存起来。请求到来时不再现场走树。`DUP → RECORD_PATTERN → CALL_BY_KEY → EXTRACT → INSERT_OUTPUT → RETURN` 这条指令序列是在这里预先生成的。
+
+冲突面比入口 Mixin 窄，但仍存在：
+
+- ExtendedAE、多世界样板、覆盖 `PatternProviderLogic` 的模组，经常也在 `updatePatterns` 的 `TAIL` 上动手。
+- Mixin 默认 `order = 1000`。谁晚谁看到的 `patterns` 才是最终列表。
+- 若别人在更晚的 `TAIL` 才把样板塞进去，VM 会**漏编译**，第一次请求再懒编译，逻辑仍正确，只是丢失「编码时预热」。
+- 若别人在更早的 `TAIL` 清空或替换列表，VM 可能编译到一份马上被扔掉的快照。
+
+`@Shadow private List patterns` 读的是 AE2 的私有字段。字段改名或改类型时，这条 Mixin 会在启动期直接失败（同样吃 `defaultRequire: 1`）。
+
+### 1.4 `CraftingSimulationStateAccessor`：读私有 `bytes`
+
+```java
+@Mixin(value = CraftingSimulationState.class, remap = false)
+public interface CraftingSimulationStateAccessor {
+    @Accessor
+    double getBytes();
+}
+```
+
+实际作用：AE2 把计划占用字节数放在包私有字段 `bytes` 里。VM 生成 `CraftingPlan` 时必须填同一个数，否则 CPU 调度、频道占用显示会和原版对不上。Accessor 是只读的，不改控制流。
+
+可能的冲突：另一个模组也对同一个字段做 `@Accessor` / `@Mutable @Accessor`。只读 Accessor 一般会被 Mixin 合并；一旦有人改写成可写并在计算中途改 `bytes`，两边的计划会漂。字段被删或改类型则启动崩溃。
+
+---
+
+## 2. 符号与定义
+
+令 $\mathcal{I}$ 为物品集合，$\mathcal{P}$ 为配方集合。
+
+### 定义 2.1（配方 Pattern）
+
+配方 $P \in \mathcal{P}$ 是五元组 $P = (I_P, O_P, \sigma_P, \rho_P, \delta_P)$：
+
+- $I_P$：有限多重输入集
+- $O_P$：有限多重输出集
+- $\sigma_P$：替换映射（空表示无替换槽）
+- $\rho_P$：槽位类型，$\{\mathrm{exact}, \mathrm{sub}\}$
+- $\delta_P$：有限次使用参数（耐久工具），可取 $\infty$
+
+对应编译器里的两处现实约束：处理配方默认模糊；只有 `getPossibleInputs().length > 1` 的槽才发 `FUZZY_SLOT`。精确槽拿替换物顶上，计划能算完、CPU 却卡在进度 0——这是 2026-08-09 那次假可行。
+
+### 定义 2.2（合成请求）
+
+$R = (I^*, N, S)$，其中 $I^*$ 是目标物品，$N$ 是数量，$S$ 是网络库存。
+
+### 定义 2.3（合成树）
+
+$T = (V, E, \lambda)$ 是有根带标号 DAG。内部节点标 $(P_v, m_v)$（配方与执行次数），叶节点标 $(i_v, c_v)$（物品与数量）。边表示产出被上游消耗。
+
+### 定义 2.4（递归算法 $\mathcal{A}_{\mathrm{rec}}$）
+
+给定 $R = (I^*, N, S)$：
+
+1. 若 $S(I^*) \geq N$，返回使用库存。
+2. 否则取主输出为 $I^*$ 的配方 $P$，记 $d$ 为该输出重数。
+3. $k = \lceil N / d \rceil$。
+4. 对每个输入 $(i, c)$ 递归 $\mathcal{A}_{\mathrm{rec}}(i, c \cdot k, S')$。
+5. 返回本次合成与子结果的并。
+
+这就是 AE2 原版在 `beginCraftingCalculation` 方法体里做的事。Mixin 一旦 `cancel`，这条路径整段不会走。
+
+### 定义 2.5（字节码）
+
+程序是有限指令序列。指令集见仓库 README，核心几条：
+
+| 指令 | 实际作用 |
+|------|----------|
+| `PUSH_LONG` / `MUL` | 把「合成次数 × 每份消耗」变成栈上的数 |
+| `CALL` / `CALL_BY_KEY` | 进入子样板。后者按物品 Key 运行时懒解析 |
+| `EXTRACT_INGREDIENT` | 从模拟库存扣原料，扣不够的记入缺失 |
+| `INSERT_OUTPUT` | 把子样板产物写回模拟库存，供后续 EXTRACT 使用 |
+| `RECORD_PATTERN` | 告诉 AE2「这个样板要跑 $k$ 次」，否则 CPU 不会派工 |
+| `CATALYST_SEED` / `DURABILITY_TOOL` | 催化剂只计一次种子；耐久工具按 $\lceil t / u \rceil$ 计件 |
+| `FUZZY_SLOT` | 仅标记**下一个** `CALL_BY_KEY` 为替换槽 |
+| `HALT` | 停机，吐出计划表 |
+
+### 定义 2.6（VM 状态）
+
+$\sigma = (\pi, pc, s, m)$：当前程序、程序计数器、BigInteger 栈、计划表。
+
+### 定义 2.7（编译 $\mathcal{C}$）
+
+对每个输入生成「压入消耗、调用子样板、抽取库存」序列，最后 `INSERT_OUTPUT` + `RETURN`。对应 `PatternCompiler.compilePattern()`。
+
+---
+
+## 3. 递归算法的复杂度
+
+### 定理 3.1（递归下界）
+
+令 $T(n, d)$ 为 $\mathcal{A}_{\mathrm{rec}}$ 在 $n$ 节点、深度 $d$ 的合成树上的时间，则
+
 $$T(n, d) = \Omega(2^d).$$
 
-*证明*。构造自指配方族 $P_k$：
-$$P_k : A + B \to 2A$$
-其中 $A$ 自产出、$B$ 外部输入。令 $R_k = (A, 2^k, S)$，其中 $S(B)$ 充分大。$\mathcal{A}_{\mathrm{rec}}$ 在第 0 层调用 $P_k$ 一次（用 amount $= 2^k$），第 1 层需调用 $P_k$ 两次以满足 $A$ 的 $2^{k+1}$ 需求（每执行 $P_k$ 一次消耗 1 个 $A$、产出 2 个 $A$，净增 1），依此类推。形式化：设 $T(d)$ 为深度 $d$ 时的调用次数，递推式为
-$$T(d) = 2 \cdot T(d-1), \quad T(0) = 1$$
-解为 $T(d) = 2^d$。每调用做 $O(1)$ 工作，故总时间为 $\Omega(2^d)$。$\square$
+构造自指配方族 $P_k : A + B \to 2A$。请求 $R_k = (A, 2^k, S)$，$S(B)$ 充分大。每执行一次净增 1 个 $A$，下一层调用次数翻倍：
 
-**推论 2.1**。当 $d = 24$（AE2 扩展包典型深度）时，$\mathcal{A}_{\mathrm{rec}}$ 最坏情形下需执行 $\sim 1.6 \times 10^7$ 次基本操作，已超出人感知阈值；$d = 30$ 时达 $\sim 10^9$，无法在线完成。
+$$T(d) = 2 \cdot T(d-1),\quad T(0) = 1 \Rightarrow T(d) = 2^d.$$
 
-## 3. 栈式虚拟机
+每调用做 $O(1)$ 工作，总时间为 $\Omega(2^d)$。
 
-**定义 3.1（VM 执行 $\mathrm{Exec}$）**。$\mathrm{Exec}(\pi, N, S) = m^*$ 是从初始栈 $s = [N]$、初始计划表 $m = \emptyset$ 出发，反复应用 $\delta$ 至遇到 $\mathrm{HALT}$ 所得到的最终计划表。
+**推论。** $d = 24$ 时约 $1.6 \times 10^7$ 次基本操作，已经超过人能等的阈值；$d = 30$ 时约 $10^9$，无法在线完成。这就是扩展包无限存储元件把原版 AE2 卡死的原因。
 
-**定理 3.1（VM 复杂度）**。设 $B = \sum_{P \in \Pi} |\mathcal{C}(P)|$ 为请求触及的所有配方的字节码总长，$k_P$ 为配方 $P$ 的调用次数。则
-$$T_{\mathrm{VM}} = O\!\left(\sum_{P \in \Pi} k_P \cdot |\mathcal{C}(P)|\right).$$
+---
 
-*证明*。每条指令执行 $O(1)$ 时间；每条指令在栈帧内被读取恰好一次（$pc$ 单调递增，指令体内无向后跳转）；每次 $\mathrm{CALL}$ 引入新栈帧，其内指令独立计数。配方 $P$ 每次调用执行 $|\mathcal{C}(P)|$ 条指令，调用 $k_P$ 次共 $k_P \cdot |\mathcal{C}(P)|$ 条。按 $\Pi$ 求和即得。$\square$
+## 4. 栈式虚拟机
 
-**推论 3.1**。若 $k_P = 1$（首次编译后被缓存命中），则 $T_{\mathrm{VM}} = O(B)$，即与树大小 $n$ 线性相关（因 $B = \Theta(n)$）。
+### 定义 4.1（执行）
 
-**定理 3.2（递归与 VM 的语义等价）**。对任意无自引用合成请求 $R$，设 $\Pi_{\mathrm{rec}}(R)$ 为 $\mathcal{A}_{\mathrm{rec}}(R)$ 的输出计划，$\Pi_{\mathrm{VM}}(R) = \mathrm{Exec}(\mathcal{C}(P_{\mathrm{root}}), N, S)$。则
-$$\Pi_{\mathrm{rec}}(R) = \Pi_{\mathrm{VM}}(R)$$
-作为多重集相等。
+$\mathrm{Exec}(\pi, N, S)$ 从栈 $[N]$、空计划表出发，反复应用转移函数直到 `HALT`。
 
-*证明*。对合成树 $T$ 的结构归纳。
+### 定理 4.1（VM 复杂度）
 
-*基础情形*：$T$ 仅含叶节点 $v$，$\lambda(v) = (I^*, N)$。$\mathcal{A}_{\mathrm{rec}}$ 直接返回 $(\mathrm{use\text{-}stock}, I^*, N)$。$\mathcal{C}(P)$ 的字节码为
-$$[\mathrm{PUSH\_ITEM}(I^*, N), \mathrm{EXTRACT\_INGREDIENT}, \mathrm{RECORD\_OUTPUT}, \mathrm{HALT}]$$
-$\mathrm{Exec}$ 在初始栈 $[N]$ 上执行后，$S(I^*)$ 减 $N$，$m(I^*) = N$。两者结果一致。
+设 $B$ 为请求触及的全部字节码总长，$k_P$ 为配方 $P$ 的调用次数，则
 
-*归纳步骤*：$T$ 根为 $P$，$m$ 个子节点 $w_1, \ldots, w_m$，对应输入 $(i_1, c_1), \ldots, (i_m, c_m)$。$\mathcal{A}_{\mathrm{rec}}$ 递归调用 $\mathcal{A}_{\mathrm{rec}}(i_j, c_j \cdot k, S')$（$k = \lceil N/d \rceil$）并合并。$\mathcal{C}(P)$ 的字节码结构为
-$$\bigl[\mathrm{PUSH\_LONG}(c_1), \mathrm{MUL}, \mathrm{CALL}(\mathcal{C}(P_{w_1})), \ldots, \mathrm{PUSH\_LONG}(c_m), \mathrm{MUL}, \mathrm{CALL}(\mathcal{C}(P_{w_m})), \mathrm{RECORD\_OUTPUT}, \mathrm{RETURN}\bigr]$$
-栈初值 $[N]$ 经 $\mathrm{PUSH\_LONG}(c_j), \mathrm{MUL}$ 变换为栈顶 $c_j \cdot N$，随后 $\mathrm{CALL}$ 启动子样板的 VM。子 VM 由归纳假设产出 $\Pi_{\mathrm{rec}}(R_j)$，与 $\mathcal{A}_{\mathrm{rec}}$ 子调用结果一致。$\mathrm{RECORD\_OUTPUT}$ 添加 $P$ 的 craft 条目，与 $\mathcal{A}_{\mathrm{rec}}$ 的合并步骤对应。$\square$
+$$T_{\mathrm{VM}} = O\!\left(\sum_{P} k_P \cdot |\mathcal{C}(P)|\right).$$
 
-## 4. 递归与虚拟机的本质区别
+每条指令 $O(1)$，帧内 $pc$ 单调递增。无 JIT 时仍可能随调用次数线性涨；JIT 的工作就是把 $k_P$ 压下去。
 
-**定义 4.1（递归算法的执行模型）**。$\mathcal{A}_{\mathrm{rec}}$ 在调用栈上为每个活动子问题分配一帧；每帧含局部变量（输入集、当前 amount、库存视图）；控制流由调用栈管理，返回时弹栈。
+**推论。** 首次编译后缓存命中、$k_P = 1$ 时，$T_{\mathrm{VM}} = O(B) = \Theta(n)$。
 
-**定义 4.2（VM 的执行模型）**。VM 在单一栈上推进 $pc$；不存在调用栈帧的隐式管理；控制流由 $\mathrm{CALL} / \mathrm{RETURN}$ 显式编码为指令；amount 是栈上普通值，可被任意指令操作。
+### 定理 4.2（无自引用下的语义等价）
 
-**核心区别**：
+对无自引用请求 $R$，递归计划与 VM 计划作为多重集相等。
 
-**(1) 计算对象的差异**。递归算法操作的对象是**子问题**（请求元组 $(I, N, S')$），调度单位是函数调用；VM 操作的对象是**数值**（栈上 BigInteger），调度单位是指令。递归 → VM 的转换本质上是将「调度结构」从语言运行时转移到字节码。
+对合成树结构归纳。叶节点两边都是「从库存扣 $N$」。内部节点上，递归按 $k = \lceil N/d \rceil$ 展开子问题；VM 用 `PUSH_LONG(c)` + `MUL` + `CALL` 做同一件事，`RECORD_PATTERN` / `INSERT_OUTPUT` 对应递归的合并步骤。
 
-**(2) 时间复杂度阶的差异**。由定理 2.1 与定理 3.1：
-$$T_{\mathrm{rec}} = \Theta(2^d), \quad T_{\mathrm{VM}} = \Theta(B) = \Theta(n).$$
-当 $d = \omega(\log n)$ 时递归阶高于 VM 阶。
+自引用（$A+B\to 2A$ 放大器、精华催化剂）不在本定理范围内，由 v1.10.3 的种子收敛单独处理：自产出抵消自消耗，主输出按净增修正合次数。
 
-**(3) 副作用可见性**。递归算法的副作用（库存扣减、计划记录）发生在**调用边界**（进入子调用前扣减、返回时合并）；VM 的副作用（$\mathrm{EXTRACT\_INGREDIENT}$、$\mathrm{RECORD\_OUTPUT}$）是**指令级**的，与控制流解耦。这允许 VM 在不增加复杂度的前提下插入优化（如 $\mathrm{scale(cts)}$，将「重复执行 $k$ 次」压成「执行 1 次但 amount 放大 $k$ 倍」），而递归算法难以做等价变换。
+---
 
-**(4) 状态封装的差异**。递归调用栈是隐式数据结构，外部无法观测中间状态；VM 栈是显式的，可被检查、修改、缓存。这使得「编译产物」成为可复用的对象——一旦 $P$ 被编译为 $\mathcal{C}(P)$，所有 $P$ 的实例（包括不同 amount、不同网络）共享同一份字节码。
+## 5. 递归与虚拟机的本质区别
 
-## 5. JIT 优化
+递归操作的对象是**子问题** $(I, N, S')$，调度在 Java 调用栈上。VM 操作的对象是**栈上的数**，调度被编码成 `CALL` / `RETURN`。
 
-**定理 5.1（线性合成函数）**。对任意无自引用配方 $P$，合成函数
-$$f_P : \mathbb{Z}_{>0} \to \mathbb{Z}_{\geq 0}^{|\mathcal{I}|}$$
-满足
-$$f_P(a N) = a \cdot f_P(N), \quad \forall a \in \mathbb{Z}_{>0}.$$
+所以：
 
-*证明*。对 $P$ 的结构归纳。基础情形 $P$ 为单输入，$f_P(N) = c \cdot N \cdot \mathbf{e}_i$，线性显然。归纳步骤：$P$ 的子问题为 $P_1, \ldots, P_m$，$f_P(N) = \sum_j c_j f_{P_j}(N)$。由归纳假设 $f_{P_j}(aN) = a f_{P_j}(N)$，故
-$$f_P(aN) = \sum_j c_j a f_{P_j}(N) = a \sum_j c_j f_{P_j}(N) = a f_P(N). \quad \square$$
+1. **复杂度阶不同。** $T_{\mathrm{rec}} = \Theta(2^d)$，$T_{\mathrm{VM}} = \Theta(B)$。当 $d = \omega(\log n)$ 时递归更差。
+2. **副作用的位置不同。** 递归在调用边界扣库存、合并计划；VM 的 `EXTRACT_INGREDIENT`、`RECORD_OUTPUT` 是指令级的，可以做 `scale(k)`：执行一次、把 amount 乘 $k$，而不必真的循环 $k$ 次。
+3. **状态可缓存。** 配方 $P$ 编译成 $\mathcal{C}(P)$ 之后，不同 amount、不同请求共享同一份字节码。这是 JIT bundle 能跨请求活着的前提。`AE2VMCrafting` 按 `IGrid` 缓存 `CraftingVM`，就是为了让这份缓存不要每次请求都清空。
 
-**定理 5.2（cts=1 内联）**。设 $P$ 为父配方，$Q$ 为子配方，$\mathrm{cts}(Q, P) = 1$。令 $\mathcal{C}_{\mathrm{inl}}(P)$ 为将 $\mathrm{CALL}(Q)$ 替换为 $Q$ 字节码体的内联结果。则
-$$|\mathcal{C}_{\mathrm{inl}}(P)| = |\mathcal{C}(P)| + |\mathcal{C}(Q)| - 1$$
-且
-$$\mathrm{Exec}(\mathcal{C}_{\mathrm{inl}}(P), N, S) = \mathrm{Exec}(\mathcal{C}(P), N, S) \quad \forall N, S.$$
+---
 
-*证明*。$\mathrm{CALL}$ 指令占 1 字（操作数 $Q$ 的引用），替换为 $\mathcal{C}(Q)$ 整体后字数为 $|\mathcal{C}(P)| - 1 + |\mathcal{C}(Q)|$。正确性：原 $\mathcal{C}(P)$ 在 $\mathrm{CALL}(Q)$ 处保存帧、跳转 $\mathcal{C}(Q)$、执行、返回；内联后字节码线性执行相同操作序列，amount 与栈状态逐步一致。$\square$
+## 6. JIT 优化
 
-**注**。单次内联节省 1 字，但更重要的是消除栈帧管理的常数开销。对 $n$ 节点全 cts=1 树，节省 $O(n)$ 帧管理 + $O(n)$ 次函数调用，叠加效应使常数因子降为原来的 $\sim 1/k$（$k$ 为平均 cts）。
+### 定理 6.1（线性合成函数）
 
-**定理 5.3（cts=$k$ 缩放）**。设 $P$ 调用 $Q$ 满足 $\mathrm{cts}(Q, P) = k$。定义 $\mathcal{C}_{\mathrm{scale}}(P)$ 为在 $\mathrm{CALL}(Q)$ 前插入 $\mathrm{PUSH\_LONG}(k), \mathrm{MUL}$ 的变体。则
-$$\mathrm{Exec}(\mathcal{C}_{\mathrm{scale}}(P), N, S) = \mathrm{Exec}(\mathcal{C}(P), N, S)$$
-且
-$$\frac{T_{\mathrm{unscaled}}}{T_{\mathrm{scaled}}} = \frac{k \cdot |\mathcal{C}(Q)|}{|\mathcal{C}(Q)| + O(1)} \to k \quad (|\mathcal{C}(Q)| \to \infty).$$
+无自引用时 $f_P(aN) = a \cdot f_P(N)$。子问题线性，求和仍线性。这是缩放合法的代数前提。
 
-*证明*。正确性：未缩放时 $Q$ 被调用 $k$ 次，每次 amount 为 $N$，计划表更新 $k \cdot f_Q(N)$；缩放后 $Q$ 被调用 1 次，amount 为 $kN$，计划表更新 $f_Q(kN)$。由定理 5.1，$f_Q(kN) = k f_Q(N)$，故两者结果相等。
+### 定理 6.2（cts = 1 内联）
 
-时间比：未缩放代价 $k \cdot |\mathcal{C}(Q)|$（$k$ 次执行，每次 $|\mathcal{C}(Q)|$ 条指令）；缩放代价 $|\mathcal{C}(Q)| + O(1)$（1 次执行 + 2 条缩放指令）。$\square$
+子样板只被父配方用一次时，把 `CALL(Q)` 换成 $Q$ 的指令体：
 
-**定理 5.4（跨请求缓存）**。设 $\mathcal{K}(S, \mathcal{P}) = (\mathrm{fingerprint}(S), \mathrm{hash}(\mathcal{P}))$ 为缓存键。两次请求 $R_1 = (I^*_1, N_1, S)$、$R_2 = (I^*_2, N_2, S)$ 满足 $\mathcal{P}_1 = \mathcal{P}_2$。则第二次请求的编译代价为
-$$T_{\mathrm{compile}}(R_2 \mid R_1) = O(1)$$
-对比首次 $T_{\mathrm{compile}}(R_1) = O\!\left(\sum_{P \in \mathcal{P}_1} |\mathcal{C}(P)|\right) = O(B).$$
+$$|\mathcal{C}_{\mathrm{inl}}(P)| = |\mathcal{C}(P)| + |\mathcal{C}(Q)| - 1,$$
 
-*证明*。缓存键完全相同；哈希表查找期望 $O(1)$；命中后直接返回已编译的字节码数组，无需重新解析配方结构。$\square$
+执行结果不变。省掉的是帧管理和一次间接跳转。
 
-## 6. 加速比综合
+### 定理 6.3（cts = $k$ 缩放）
 
-对深度 $d$、节点数 $n$、每节点平均 cts 为 $\bar{k}$ 的合成树，三种优化的累积效果：
+`CALL(Q)` 前插入 `PUSH_LONG(k)` + `MUL`，只执行一次 $Q$，amount 变成 $kN$。由定理 6.1，$f_Q(kN) = k f_Q(N)$。加速比趋向 $k$：
 
-| 优化项 | 加速比 | 适用条件 |
-|--------|--------|----------|
-| 栈式 VM（替代递归） | $2^d / n$（最坏 $d=24$ 时 $\sim 2^{24}/n$） | 所有 DAG |
-| cts=1 内联 | $O(1)$（消除每层栈帧开销） | 子节点不被复用 |
-| cts=$k$ 缩放 | $k$ | 子节点 cts $> 1$ |
+$$\frac{T_{\mathrm{unscaled}}}{T_{\mathrm{scaled}}} \to k \quad (|\mathcal{C}(Q)| \to \infty).$$
+
+催化剂种子刻意**不**乘 $k$（`CATALYST_SEED` 写在 bundle 的 `seeds` 里，`scale()` 不碰它），否则模板/温室方块会被报成缺 $k$ 个。
+
+### 定理 6.4（跨请求缓存）
+
+缓存键是库存指纹与配方哈希。同一网络第二次请求的编译代价 $O(1)$，对比首次 $O(B)$。
+
+---
+
+## 7. 加速比
+
+对深度 $d$、节点数 $n$、平均 cts 为 $\bar{k}$ 的树：
+
+| 优化 | 加速比 | 条件 |
+|------|--------|------|
+| 栈式 VM 替代递归 | $2^d / n$（$d=24$ 时最显著） | 任意 DAG |
+| cts = 1 内联 | 去掉每层栈帧常数 | 子节点不复用 |
+| cts = $k$ 缩放 | $k$ | 子节点 cts $> 1$ |
 | 跨请求缓存 | $B / 1$ | 同一网络重复请求 |
 
-实际测量（仓库 README 1.10.7）：$d = 14$、$n \sim 10^4$、$\bar{k} \sim 4$ 时，递归 90 s，VM 38 ms，加速比 $\sim 2400\times$。$d = 30$、$n \sim 10^9$ 时递归无法完成，VM + JIT 280 ms。
+仓库 README 1.10.7 的实测：$d = 14$、$n \sim 10^4$ 时递归约 90 s，VM 约 38 ms，约 $2400\times$。$d = 30$ 时递归算不完，VM + JIT 约 280 ms。
 
-## 7. 结论
+---
 
-形式化分析给出三条结论：
+## 8. 结论
 
-1. **递归合成算法的最坏时间复杂度为 $\Theta(2^d)$**（定理 2.1），无法通过常数因子优化改善——其结构瓶颈在于「每层展开全部子问题」的控制流。
+1. **递归最坏 $\Theta(2^d)$**（定理 3.1）。瓶颈是控制流「每层展开全部子问题」，不是某次乘法慢。
+2. **无自引用时 VM 与递归语义等价**（定理 4.2），时间降到 $\Theta(n)$。调度从语言运行时搬到字节码之后，编译、缓存、缩放才成为合法变换。
+3. **和 ECO 的共存不靠 Mixin `order` 互抢。** 1.20.1 / 1.21.1 由闪电库（Thunderbolt Core 2.0 的 `CraftingPlanningEngine`）做引擎路由，jar 版本必须对上；**26.1 目前没有兼容措施**。没走这张表、自己再打 `beginCraftingCalculation` 的模组，仍然可能把返回值盖掉。样板预编译的 `TAIL` 和 `bytes` Accessor 是次要冲突面。
 
-2. **栈式 VM 与递归算法在无自引用情形下语义等价**（定理 3.2），但时间复杂度降为 $\Theta(B) = \Theta(n)$（定理 3.1）。这一改进的代数来源是：将「调用栈上的递归结构」转化为「线性字节码上的顺序迭代」，使每一层子问题的处理从「重新调度」降为「顺序推进」。
-
-3. **JIT 的三种优化均有可证明的正确性定理与可量化的加速比**：内联节省 $O(n)$ 帧管理（定理 5.2），缩放节省因子 $k$（定理 5.3），跨请求缓存节省 $B$（定理 5.4）。三者的共同前提是定理 5.1（合成函数的线性性），该性质是递归算法无法直接利用的——它要求将「amount」提升为可运算的栈值。
-
-递归与 VM 的本质区别不在于「是否栈式执行」，而在于**调度结构的位置**：递归把调度交给语言运行时，VM 把调度编码为数据。一旦调度成为数据，编译、缓存、变换都成为可能。
+递归和 VM 的差别不在「是不是栈式」，而在**调度结构放在哪**：递归把调度交给 JVM，VM 把调度变成数据。调度一旦是数据，1.20.1 / 1.21.1 上要抢的就不再是某几行递归代码，而是闪电库那张引擎表里的 `ae2vm` 这一格——26.1 还没有这张表。

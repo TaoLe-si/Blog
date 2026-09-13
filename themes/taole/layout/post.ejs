@@ -12,6 +12,8 @@
     var tags = page.tags && page.tags.length ? page.tags.toArray() : [];
     var plain = String(page.content || '').replace(/<[^>]+>/g, '').length;
     var mins = Math.max(1, Math.round(plain / 400));
+    // 编程类 / 显式 tech: true：关闭散文首行缩进，给公式、表格、代码留排版
+    var isTech = page.tech === true || cats.some(function (c) { return c.name === '编程'; });
 
     // 分类名 → 板块 key。topics.ejs 里锚点是 id="<key>"，
     // 直接用分类名（中文）拼 hash 会定位不到，也过不了 querySelector。
@@ -26,7 +28,7 @@
 
   <main class="wrap">
     <div class="post-layout single">
-      <article>
+      <article<%- isTech ? ' class="is-tech"' : '' %>>
         <header class="post-head">
           <div class="crumb">
             <a href="<%- url_for('/') %>">首页</a>
@@ -57,7 +59,7 @@
           <% } %>
         </header>
 
-        <div class="post-body">
+        <div class="post-body<%= isTech ? ' is-tech' : '' %>">
           <%- page.content %>
         </div>
 

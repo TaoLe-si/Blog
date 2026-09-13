@@ -709,8 +709,11 @@ img { max-width: 100%; }
   width: 100%;
   min-width: 0;        /* 防止 grid item 被内容撑爆 */
   margin: 0 auto;
-  overflow-wrap: anywhere;  /* 长 LaTeX / URL 强制可断行 */
+  overflow-wrap: break-word;
   word-wrap: break-word;
+}
+.post-layout > article.is-tech {
+  max-width: 880px;
 }
 
 .post-head { padding: 8px 0 26px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
@@ -724,8 +727,11 @@ img { max-width: 100%; }
 .crumb { font-size: 13.5px; color: var(--text-mute); }
 .crumb a:hover { color: var(--accent); }
 
-.post-body { font-size: 17.5px; line-height: 2; overflow-wrap: anywhere; word-wrap: break-word; }
-.post-body > p { margin: 0 0 18px; text-indent: 2em; overflow-wrap: anywhere; }
+.post-body { font-size: 17.5px; line-height: 2; overflow-wrap: break-word; word-wrap: break-word; }
+.post-body > p { margin: 0 0 18px; text-indent: 2em; overflow-wrap: break-word; }
+.post-body > p:has(.katex-display) { text-indent: 0; }
+.post-body.is-tech { font-size: 17px; line-height: 1.8; }
+.post-body.is-tech > p { text-indent: 0; }
 .post-body h2 {
   margin: 42px 0 14px;
   padding-bottom: 10px;
@@ -735,6 +741,11 @@ img { max-width: 100%; }
   line-height: 1.35;
 }
 .post-body h3 { margin: 30px 0 12px; font-size: 19px; letter-spacing: -.01em; }
+.post-body.is-tech h3 {
+  margin: 28px 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
 .post-body a {
   color: var(--accent);
   border-bottom: 1px solid var(--accent);
@@ -794,13 +805,16 @@ figure.highlight .gutter {
   line-height: 1.7;
 }
 figure.highlight .gutter .line { display: block; }
-figure.highlight .code { padding: 16px 18px 16px 14px; overflow-x: auto; }
+figure.highlight .code { padding: 16px 18px 16px 14px; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
 figure.highlight pre {
   margin: 0;
   font-family: var(--font-mono);
   font-size: 13.5px;
   line-height: 1.7;
   color: var(--code-text);
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: pre;
 }
 .post-body code:not([class]) {
   padding: 2px 6px;
@@ -810,6 +824,34 @@ figure.highlight pre {
   font-family: var(--font-mono);
   font-size: .88em;
   color: var(--accent);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Markdown 表格（技术文）。选择器避开 figure.highlight 内部的表格。 */
+.post-body > table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+}
+.post-body > table th,
+.post-body > table td {
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.post-body > table thead th {
+  background: var(--bg-soft);
+  font-weight: 650;
+  color: var(--text);
+  white-space: nowrap;
+}
+.post-body > table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--bg-soft) 55%, transparent);
 }
 
 /* TOC（右侧弹出式） */
@@ -1504,9 +1546,19 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
   .nav-links a:active, .to-top:active, .chip:active { transform: none; }
 }
 
-/* KaTeX 预渲染（markdown-it-katex 在 build 时输出静态 HTML）：
-   .katex 行内公式；.katex-display 块级公式；.katex-mathml MathML 回退。 */
-.post-body .katex { font-size: 1.05em; }
-.post-body .katex-display { display: block; margin: 1em 0; text-align: center; text-indent: 0; }
-.post-body .katex-display-wrapper { text-indent: 0; }
-.post-body .katex-mathml { position: absolute; clip: rect(1px, 1px, 1px, 1px); padding: 0; border: 0; height: 1px; width: 1px; overflow: hidden; }
+/* KaTeX：定位/下标由官方 CSS 负责，这里只处理文章排版，避免覆盖 vlist。 */
+.post-body .katex { font-size: 1.05em; overflow-wrap: normal; word-break: normal; }
+.post-body :is(h2, h3):has(.katex) { line-height: 1.5; }
+.post-body .katex-display-wrapper {
+  text-indent: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+.post-body .katex-display {
+  text-indent: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0 8px;
+  max-width: 100%;
+}

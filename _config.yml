@@ -105,7 +105,7 @@ deploy:
 
 # Markdown 渲染：用 markdown-it 替代默认 marked，启用 KaTeX 预渲染
 # 解决 marked 把 _ 误判为斜体、吞掉 LaTeX 下标的问题
-# 公式在 build 时被转成静态 HTML，文章不依赖客户端 JS / CDN
+# 公式在 build 时由 scripts/md-katex.js 转成静态 HTML（katex 0.18，不要再用 markdown-it-katex）
 markdown:
   render:
     html: true
@@ -114,8 +114,6 @@ markdown:
     linkify: true
     typographer: true
     quotes: '“”‘’'
-  plugins:
-    - markdown-it-katex
   anchors:
     level: 2
     collisionSuffix: ''
