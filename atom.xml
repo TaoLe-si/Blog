@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="/Blog/atom.xsl"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>桃</title>
+  
+  <subtitle>桃之夭夭 · 灼灼其华</subtitle>
+  <link href="https://taole-si.github.io/Blog/atom.xml" rel="self"/>
+  
+  <link href="https://taole-si.github.io/Blog/"/>
+  <updated>2025-03-26T10:52:41+08:00</updated>
+  <id>https://taole-si.github.io/Blog/</id>
+  
+  <author>
+    <name>桃</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="https://taole-si.github.io/Blog/2025/03/26/hello-world/"/>
+    <id>https://taole-si.github.io/Blog/2025/03/26/hello-world/</id>
+    <published>2025-03-26T10:52:41+08:00</published>
+    <updated>2025-03-26T10:52:41+08:00</updated>
+    
+    <content type="html"><![CDATA[<p>这是这个博客的第一篇文章。与其照抄 Hexo 的默认模板，不如拿它当一次真实的练手：从零把站点跑起来，再把它改成自己想要的样子。</p><span id="more"></span><h2 id="为什么要自己写一遍"><a href="#为什么要自己写一遍" class="headerlink" title="为什么要自己写一遍"></a>为什么要自己写一遍</h2><p>Hexo 生成的默认主题开箱即用，但它把几乎所有东西都藏在模板里。想换个配色、加个板块、改一下文章卡片，改起来反而绕。所以这次我干脆把生成的静态产物直接重写了一遍 —— 结构、样式、交互全部自己控制。</p><blockquote><p>能用默认的，就先跑起来；要长期维护的，还是得自己握在手里。</p></blockquote><h2 id="几个常用命令"><a href="#几个常用命令" class="headerlink" title="几个常用命令"></a>几个常用命令</h2><p>Hexo 的日常其实就四条命令，记住基本就够用了。</p><h3 id="新建文章"><a href="#新建文章" class="headerlink" title="新建文章"></a>新建文章</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>会在 <code>source/_posts/</code> 下生成一份带 front-matter 的 Markdown。</p><h3 id="本地预览"><a href="#本地预览" class="headerlink" title="本地预览"></a>本地预览</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>默认起在 <code>http://localhost:4000</code>，改文件会热更新。</p><h3 id="生成静态文件"><a href="#生成静态文件" class="headerlink" title="生成静态文件"></a>生成静态文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>产物落在 <code>public/</code>，这一步决定了最终上线的样子。</p><h3 id="一键部署"><a href="#一键部署" class="headerlink" title="一键部署"></a>一键部署</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>配合 <code>_config.yml</code> 里的 deploy 配置，可以直接推到 GitHub Pages。</p><h2 id="这套界面的取舍"><a href="#这套界面的取舍" class="headerlink" title="这套界面的取舍"></a>这套界面的取舍</h2><p>整体走扁平化路线：去掉渐变阴影和拟物质感，靠留白、层级和一点点色彩对比来撑结构。</p><ul><li><strong>颜色</strong>：只保留一个主色（靛紫）和一个点缀色（暖橙），其余全部交给中性灰度。</li><li><strong>圆角</strong>：统一 10px &#x2F; 16px 两档，不做大小混用。</li><li><strong>动效</strong>：只保留位移和透明度过渡，时长控制在 250ms 以内，不喧宾夺主。</li><li><strong>深色模式</strong>：用 CSS 变量整套切换，不写第二份样式表。</li></ul><h2 id="接下来"><a href="#接下来" class="headerlink" title="接下来"></a>接下来</h2><p>之后会陆续把板块填起来：编程、教程、文学、随笔等等，每写一篇就归一次类。</p>]]></content>
+    
+    
+    <summary type="html">第一篇文章。与其照抄 Hexo 的默认模板，不如拿它当一次真实的练手：从零把站点跑起来，再把它改成自己想要的样子。</summary>
+    
+    
+    
+    <category term="编程" scheme="https://taole-si.github.io/Blog/categories/%E7%BC%96%E7%A8%8B/"/>
+    
+    
+    <category term="Hexo" scheme="https://taole-si.github.io/Blog/tags/Hexo/"/>
+    
+  </entry>
+  
+</feed>
