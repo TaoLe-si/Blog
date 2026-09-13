@@ -16,6 +16,8 @@
   --accent: #5b5bd6;
   --accent-2: #e0805a;
   --accent-soft: rgba(91, 91, 214, 0.10);
+  --grad-hi: #8f8ff0;
+  --grad-lo: #5b5bd6;
   --code-bg: #1d1b2b;
   --code-text: #e8e5f6;
   --radius: 16px;
@@ -42,6 +44,8 @@
   --accent: #8f8ff0;
   --accent-2: #f0a37e;
   --accent-soft: rgba(143, 143, 240, 0.14);
+  --grad-hi: #b3b3ff;
+  --grad-lo: #7a7ae8;
   --code-bg: #0e0d16;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 18px 40px -20px rgba(0, 0, 0, 0.7);
@@ -50,7 +54,19 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: var(--accent) transparent; }
+
+/* 浏览器滚动条：渐变风格 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  border: 2px solid var(--bg);
+  background: linear-gradient(180deg, var(--grad-hi), var(--grad-lo));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--accent), var(--grad-lo));
+}
 
 body {
   margin: 0;
@@ -641,7 +657,7 @@ img { max-width: 100%; }
 
 .post-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 232px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 44px;
   padding: 40px 0 80px;
   align-items: start;
@@ -746,8 +762,51 @@ figure.highlight pre {
   color: var(--accent);
 }
 
-/* TOC */
-.toc { position: sticky; top: 92px; }
+/* TOC（右侧弹出式） */
+.toc-pop {
+  position: fixed;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+}
+.toc-handle {
+  display: grid; place-items: center;
+  width: 30px; height: 56px;
+  border: 1px solid var(--line);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  background: var(--card);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.toc-handle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.toc-handle svg { width: 16px; height: 16px; }
+
+.toc-flyout {
+  position: absolute;
+  right: 30px; top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  width: 250px;
+  max-height: min(66vh, 520px);
+  overflow: auto;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  scrollbar-width: thin;
+}
+.toc-pop.is-open .toc-flyout,
+.toc-pop:hover .toc-flyout {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+.toc-flyout .toc { position: static; }
+
 .toc-title {
   font-size: 12px;
   letter-spacing: .1em;
@@ -766,8 +825,13 @@ figure.highlight pre {
   line-height: 1.5;
   transition: color .2s ease, border-color .2s ease;
 }
+.toc li.toc-h3 a { padding-left: 26px; }
 .toc li a:hover { color: var(--text); }
 .toc li a.active { color: var(--accent); border-left-color: var(--accent); }
+
+@media (max-width: 720px) {
+  .toc-pop { display: none; }
+}
 
 /* ---------------- Archive ---------------- */
 
@@ -942,9 +1006,9 @@ figure.highlight pre {
 
 .music-rail-fill {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
+  left: 0; right: 0; top: 0;
   height: 0%;
-  background: var(--accent);
+  background: linear-gradient(180deg, var(--grad-hi), var(--grad-lo));
 }
 
 /* 贴左缘的音符把手：常驻可见 */
@@ -984,6 +1048,7 @@ figure.highlight pre {
   min-width: 44px;
 }
 .music-player:hover .music-flyout,
+.music-player.is-open .music-flyout,
 .music-player.is-touch .music-flyout {
   opacity: 1;
   pointer-events: auto;
@@ -1039,9 +1104,8 @@ figure.highlight pre {
 /* ---------------- Responsive ---------------- */
 
 @media (max-width: 1000px) {
-  .layout, .post-layout { grid-template-columns: minmax(0, 1fr); gap: 34px; }
-  .sidebar, .toc { position: static; }
-  .toc-card { display: none; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 34px; }
+  .sidebar { position: static; }
   .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .hero-side {
     flex-direction: row;

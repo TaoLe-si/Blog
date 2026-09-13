@@ -60,13 +60,14 @@
     }
   });
 
-  /* ---------- 目录 TOC（文章页自动生成） ---------- */
+  /* ---------- 目录 TOC（文章页右侧弹出） ---------- */
   var tocBox = doc.querySelector("#toc-list");
   var body = doc.querySelector(".post-body");
 
   if (tocBox && body) {
     var heads = body.querySelectorAll("h2, h3");
-    if (heads.length) {
+    var tocPop = doc.getElementById("toc-pop");
+    if (heads.length && tocPop) {
       var html = "";
       var n = 0;
       Array.prototype.forEach.call(heads, function (h) {
@@ -95,9 +96,31 @@
       }
       window.addEventListener("scroll", syncToc, { passive: true });
       syncToc();
-    } else {
-      var card = doc.querySelector(".toc-card");
-      if (card) card.style.display = "none";
+
+      // 与音乐卡片一致的弹出驻留：移出 2 秒后收起
+      var tocTimer = null;
+      function tocOpen() {
+        if (tocTimer) { clearTimeout(tocTimer); tocTimer = null; }
+        tocPop.classList.add("is-open");
+      }
+      function tocCloseLater() {
+        if (tocTimer) clearTimeout(tocTimer);
+        tocTimer = setTimeout(function () {
+          tocPop.classList.remove("is-open");
+          tocTimer = null;
+        }, 2000);
+      }
+      tocPop.addEventListener("mouseenter", tocOpen);
+      tocPop.addEventListener("mouseleave", tocCloseLater);
+      tocPop.querySelector(".toc-handle").addEventListener("click", function () {
+        if (tocPop.classList.contains("is-open")) {
+          tocPop.classList.remove("is-open");
+        } else {
+          tocOpen();
+        }
+      });
+    } else if (tocPop) {
+      tocPop.style.display = "none";
     }
   }
 
@@ -181,13 +204,26 @@
     var timeEl = player.querySelector(".music-time");
 
     var index = 0;
-    var touching = false;
-    var PAUSE_KEY = "music-user-paused";
+    var STATE_KEY = "music-state";
+    var lastSave = 0;
 
     function fmt(sec) {
       if (!isFinite(sec)) return "0:00";
       sec = Math.max(0, Math.round(sec));
       return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2);
+    }
+
+    function saveState(force) {
+      var now = Date.now();
+      if (!force && now - lastSave < 1000) return;
+      lastSave = now;
+      try {
+        localStorage.setItem(STATE_KEY, JSON.stringify({
+          i: index,
+          t: audio.currentTime || 0,
+          p: !audio.paused
+        }));
+      } catch (e) {}
     }
 
     function load(i) {
@@ -199,23 +235,21 @@
     function paintProgress() {
       var pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
       fill.style.height = pct + "%";
-      timeEl.textContent = fmt(touching ? audio.currentTime : audio.currentTime);
+      if (timeEl) timeEl.textContent = fmt(audio.currentTime);
     }
 
     function toggle() {
       if (player.classList.contains("is-playing")) {
         audio.pause();
-        try { localStorage.setItem(PAUSE_KEY, "1"); } catch (e) {}
       } else {
-        try { localStorage.removeItem(PAUSE_KEY); } catch (e) {}
         audio.play().catch(function () { /* 自动播放被拦或加载失败，忽略 */ });
       }
     }
 
-    audio.addEventListener("play", function () { player.classList.add("is-playing"); });
-    audio.addEventListener("pause", function () { player.classList.remove("is-playing"); });
+    audio.addEventListener("play", function () { player.classList.add("is-playing"); saveState(true); });
+    audio.addEventListener("pause", function () { player.classList.remove("is-playing"); saveState(true); });
     audio.addEventListener("ended", function () { load(index + 1); audio.play().catch(function () {}); });
-    audio.addEventListener("timeupdate", paintProgress);
+    audio.addEventListener("timeupdate", function () { paintProgress(); saveState(false); });
     audio.addEventListener("loadedmetadata", paintProgress);
 
     playBtn.addEventListener("click", toggle);
@@ -230,12 +264,11 @@
       if (wasPlaying) audio.play().catch(function () {});
     });
 
-    // 点竖条任意位置跳转进度
+    // 点竖条任意位置跳转进度（从上往下：顶部 = 0，底部 = 全曲）
     rail.addEventListener("click", function (e) {
       if (!audio.duration) return;
       var rect = rail.getBoundingClientRect();
-      // 从下往上：底部 = 0，顶部 = 全曲
-      var ratio = 1 - (e.clientY - rect.top) / rect.height;
+      var ratio = (e.clientY - rect.top) / rect.height;
       audio.currentTime = Math.min(Math.max(ratio, 0), 1) * audio.duration;
     });
 
@@ -261,12 +294,48 @@
       });
     }
 
-    load(0);
+    // 浮层驻留：鼠标离开播放器区域 2 秒后收起（移到浮层上不消失）
+    var hideTimer = null;
+    function openFlyout() {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      player.classList.add("is-open");
+    }
+    function scheduleClose() {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {
+        player.classList.remove("is-open");
+        hideTimer = null;
+      }, 2000);
+    }
+    player.addEventListener("mouseenter", openFlyout);
+    player.addEventListener("mouseleave", scheduleClose);
 
-    // 进入自动播放：被浏览器拦截时，等用户第一次交互立刻开播
-    var wantAuto = true;
-    try { wantAuto = !localStorage.getItem(PAUSE_KEY); } catch (e) {}
-    if (wantAuto && tracks.length) {
+    // 恢复上次播放状态（跨页面续播），否则从头开始
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STATE_KEY) || "null"); } catch (e) { saved = null; }
+
+    var resume = saved && saved.i < tracks.length && saved.t > 0;
+    load(resume ? saved.i : 0);
+
+    // 恢复上次进度：play 事件可能早于 metadata 就绪（duration 还是 NaN），
+    // 所以三个事件都挂，等 duration 可用时执行一次
+    var restored = false;
+    function tryRestore() {
+      if (resume && !restored && isFinite(audio.duration) && audio.duration > 0) {
+        restored = true;
+        audio.currentTime = Math.min(saved.t, Math.max(audio.duration - 1, 0));
+      }
+    }
+    audio.addEventListener("loadedmetadata", tryRestore);
+    audio.addEventListener("canplay", tryRestore);
+    audio.addEventListener("play", tryRestore);
+
+    // 离开页面时保存最新状态
+    window.addEventListener("pagehide", function () { saveState(true); });
+
+    // 自动播放：上次在播 / 首次访问 → 尝试直接响；被浏览器拦则等首次交互
+    var wantPlay = resume ? !!saved.p : true;
+    if (wantPlay && tracks.length) {
       audio.play().catch(function () {
         var kick = function () {
           audio.play().catch(function () {});

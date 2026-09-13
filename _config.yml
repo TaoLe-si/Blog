@@ -87,6 +87,13 @@ ignore:
 # Extensions
 theme: taole
 
+# RSS / Atom 订阅
+feed:
+  type: atom
+  path: atom.xml
+  limit: 20
+  content: true
+
 # Deployment
 ## GitHub Pages：main 分支放生成产物，master 分支放源文件
 deploy:
