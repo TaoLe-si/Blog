@@ -3,6 +3,9 @@ node_modules/
 # package-lock.json 需要提交：CI 的 setup-node cache: npm 依赖它
 yarn.lock
 
+# 音乐源文件（站点用副本在 themes/taole/source/music/）
+/music/
+
 # Hexo 生成产物（由 GitHub Actions 构建到 main 分支）
 public/
 .deploy_git/

@@ -1,0 +1,30 @@
+<% if (theme.music && theme.music.enable && theme.music.tracks && theme.music.tracks.length) { %>
+<div id="music-player" class="music-player"
+     data-tracks='<%= JSON.stringify(theme.music.tracks.map(function(t){
+       var title = t.title || "";
+       var idx = title.indexOf(" - ");
+       var song = idx >= 0 ? title.slice(idx + 3) : title;
+       return { src: url_for(t.file), title: song };
+     })) %>'>
+  <div class="music-rail" aria-label="播放进度（点击跳转）">
+    <div class="music-rail-fill"></div>
+  </div>
+  <div class="music-flyout">
+    <div class="music-title" aria-live="polite"></div>
+    <div class="music-controls">
+      <button class="music-btn music-prev" type="button" aria-label="上一首">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 6h2v12H6zM20 6l-10 6 10 6z"/></svg>
+      </button>
+      <button class="music-btn music-play" type="button" aria-label="播放 / 暂停">
+        <svg class="p-play" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="p-pause" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+      <button class="music-btn music-next" type="button" aria-label="下一首">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 6h2v12h-2zM4 6l10 6-10 6z"/></svg>
+      </button>
+    </div>
+    <div class="music-time">0:00</div>
+  </div>
+  <audio class="music-audio" preload="none"></audio>
+</div>
+<% } %>

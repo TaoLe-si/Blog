@@ -83,6 +83,16 @@ topics:
     bg: "rgba(79,163,91,.10)"
     icon: heart
 
+# 迷你音乐播放器（右下角，默认收起，不自动播放）
+# file 为站点根绝对路径（Hexo 会带上 root 前缀）
+music:
+  enable: true
+  tracks:
+    - file: /music/maybe-one-day.mp3
+      title: Mina Okabe - Maybe One Day
+    - file: /music/keep-cold.mp3
+      title: Numcha - Keep Cold
+
 # 菜单
 menu:
   首页: /
