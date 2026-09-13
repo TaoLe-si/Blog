@@ -741,7 +741,24 @@
       go(a.href, false);
     });
 
+    // 页面上当前挂着的文档是哪个（不含 hash）。
+    // 点击 <a href="#锚点"> 也会触发 popstate，但那只是同文档内的位置变化，
+    // 不能当成换页 —— 否则会对同一个页面再跑一遍 PJAX（fetch + 重建 body），
+    // 结果就是目录/锚点跳转变成瞬移（PJAX 里用的是 instant 定位），
+    // 而且 fetch 一失败还会 location.href 整页重载，音乐直接断。
+    var docKey = location.pathname + location.search;
+
+    function sameDoc() {
+      return location.pathname + location.search === docKey;
+    }
+
     window.addEventListener("popstate", function (e) {
+      // 同文档（只是 hash 变了）：交给浏览器原生锚点行为，它是平滑的
+      if (sameDoc()) {
+        doc.documentElement.classList.remove("is-pjaxing");
+        flashTarget(hashTarget(location.hash));
+        return;
+      }
       var y = (e.state && e.state.y) ? e.state.y : 0;
       go(location.href, true, y);
     });
@@ -805,6 +822,10 @@
         history.replaceState({ pjax: true, y: window.pageYOffset }, "", location.href);
         history.pushState({ pjax: true, y: 0 }, "", url);
       }
+
+      // 基线跟着换页走：上面 popstate 里的 sameDoc() 靠它判断
+      // 「hash 变了」还是「换页了」，不更新的话第二次切页起就会误判
+      docKey = location.pathname + location.search;
 
       initPage();
       // initPage 里已经按 hash 定位过就别再拉回顶部
