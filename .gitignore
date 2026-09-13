@@ -1,6 +1,6 @@
 # 依赖
 node_modules/
-package-lock.json
+# package-lock.json 需要提交：CI 的 setup-node cache: npm 依赖它
 yarn.lock
 
 # Hexo 生成产物（由 GitHub Actions 构建到 main 分支）
