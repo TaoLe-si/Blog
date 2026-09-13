@@ -1546,18 +1546,19 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
   .nav-links a:active, .to-top:active, .chip:active { transform: none; }
 }
 
-/* KaTeX 预渲染（markdown-it-katex 在 build 时输出静态 HTML）：
-   .katex 行内公式；.katex-display 块级公式；.katex-mathml MathML 回退。 */
+/* KaTeX：定位/下标由官方 CSS 负责，这里只处理文章排版，避免覆盖 vlist。 */
 .post-body .katex { font-size: 1.05em; overflow-wrap: normal; word-break: normal; }
+.post-body :is(h2, h3):has(.katex) { line-height: 1.5; }
+.post-body .katex-display-wrapper {
+  text-indent: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
 .post-body .katex-display {
-  display: block;
-  margin: 1em 0;
-  text-align: center;
   text-indent: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 2px 0 8px;
   max-width: 100%;
 }
-.post-body .katex-display-wrapper { text-indent: 0; }
-.post-body .katex-mathml { position: absolute; clip: rect(1px, 1px, 1px, 1px); padding: 0; border: 0; height: 1px; width: 1px; overflow: hidden; }
