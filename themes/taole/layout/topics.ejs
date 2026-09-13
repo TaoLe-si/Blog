@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="<%= config.language || 'zh-CN' %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <%- partial('_partial/header') %>
+
+  <%
+    var topics = theme.topics || [];
+
+    // 图标库
+    var icons = {
+      code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13 5l-2 14"/>',
+      book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M9 7h6M9 11h4"/>',
+      feather: '<path d="M20.2 3.8a5.5 5.5 0 0 0-7.8 0L5 11.2V19h7.8l7.4-7.4a5.5 5.5 0 0 0 0-7.8z"/><path d="M16 8 5 19"/>',
+      gamepad: '<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 10.5v4M5 12.5h4M16 11.5h.01M18.5 14h.01"/>',
+      file: '<path d="M20 15.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8.5L20 8.5z"/><path d="M14 3v6h6"/>',
+      library: '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5.5A1.5 1.5 0 0 1 4 19.5z"/><path d="M4 17h16"/>',
+      wrench: '<path d="M14.7 6.3a4 4 0 0 1 5 5L11 20H6v-5z"/><path d="M13 8l3 3"/>',
+      heart: '<path d="M12 21s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.4-7 10-7 10z"/>'
+    };
+
+    // 统计每个板块的文章数 + 取最新一篇
+    var info = {};
+    topics.forEach(function (t) { info[t.name] = { count: 0, latest: null }; });
+    site.posts.sort('date', -1).each(function (post) {
+      var cats = post.categories && post.categories.length ? post.categories.toArray() : [];
+      cats.forEach(function (c) {
+        if (info[c.name]) {
+          info[c.name].count++;
+          if (!info[c.name].latest) info[c.name].latest = post;
+        }
+      });
+    });
+  %>
+
+  <section class="topics-hero">
+    <div class="wrap">
+      <div class="crumb" style="margin-bottom:12px"><a href="<%- url_for('/') %>">首页</a> / 板块</div>
+      <h1>板块</h1>
+      <p>按主题归类的写作分区。点开任意板块，只看这一类的内容。</p>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div style="padding:40px 0 76px">
+      <div class="topic-filter" id="topic-filter">
+        <button class="active" data-filter="all">全部</button>
+        <% topics.forEach(function (t) { %>
+          <button data-filter="<%= t.key %>"><%= t.name %></button>
+        <% }); %>
+      </div>
+
+      <div class="section-head">
+        <h2>全部板块</h2>
+        <span id="topic-count">共 <%= topics.length %> 个</span>
+      </div>
+
+      <div class="topic-grid" id="topic-grid">
+        <% topics.forEach(function (t) { %>
+          <%
+            var st = info[t.name] || { count: 0, latest: null };
+          %>
+          <a class="topic-card" href="#<%= t.key %>" data-topic="<%= t.key %>"
+             style="--topic-color:<%= t.color %>;--topic-bg:<%= t.bg %>">
+            <div class="topic-head">
+              <span class="topic-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><%- icons[t.icon] || icons.file %></svg>
+              </span>
+              <span class="topic-name"><%= t.name %><small><%= t.en %></small></span>
+              <span class="topic-count"><%= st.count %> 篇</span>
+            </div>
+            <p class="topic-desc"><%= t.desc %></p>
+            <div class="topic-latest">
+              <strong>最新</strong>
+              <% if (st.latest) { %>
+                <a href="<%- url_for(st.latest.path) %>"><%= st.latest.title %></a>
+              <% } else { %>
+                <span style="color:var(--text-mute)">暂无文章</span>
+              <% } %>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  </main>
+
+  <%- partial('_partial/footer') %>
+</body>
+</html>

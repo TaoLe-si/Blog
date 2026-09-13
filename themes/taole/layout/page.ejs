@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="<%= config.language || 'zh-CN' %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <%- partial('_partial/header') %>
+
+  <main class="wrap">
+    <div class="page" style="padding:48px 0 76px">
+      <div class="crumb" style="margin-bottom:14px"><a href="<%- url_for('/') %>">首页</a> / <%= page.title %></div>
+      <div class="section-head">
+        <h2><%= page.title %></h2>
+      </div>
+      <div class="post-body">
+        <%- page.content %>
+      </div>
+    </div>
+  </main>
+
+  <%- partial('_partial/footer') %>
+</body>
+</html>

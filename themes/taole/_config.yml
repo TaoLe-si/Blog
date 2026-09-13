@@ -1,0 +1,91 @@
+# 主题配置
+# 站点信息（也可在根 _config.yml 里改）
+
+# 个性签名，显示在导航副标题 / 头像卡 / 侧栏 / 页脚
+signature: 桃之夭夭，灼灼其华
+
+# 头像：填相对路径（相对主题 source 之外的站点根）或完整 URL
+avatar: /Blog/css/images/avatar.jpg
+
+# 侧栏个人简介
+bio: 在游戏开发与前端之间反复横跳
+
+# 首页 hero 区
+hero:
+  enable: true
+  badge: 持续更新中
+  title: 写下来，
+  highlight: 才算真的想过
+  subtitle: 游戏开发、编程折腾、读书笔记，以及一些还没成型的想法。
+
+# 社交链接
+social:
+  github: https://github.com/TaoLe-si
+  rss: true
+
+# 板块（对应文章 front-matter 的 categories）
+# key 用于生成锚点，name 是显示名
+topics:
+  - key: programming
+    name: 编程
+    en: Programming
+    desc: 代码、架构、踩过的坑，以及一些不太好意思说的调试过程。
+    color: "#5b5bd6"
+    bg: "rgba(91,91,214,.10)"
+    icon: code
+  - key: tutorial
+    name: 教程
+    en: Tutorial
+    desc: 手把手式的操作记录，尽量保证照着做能跑起来。
+    color: "#2f9e8f"
+    bg: "rgba(47,158,143,.10)"
+    icon: book
+  - key: literature
+    name: 文学
+    en: Literature
+    desc: 诗、句子、读到的段落，以及自己写的不太像样的东西。
+    color: "#c2557f"
+    bg: "rgba(194,85,127,.10)"
+    icon: feather
+  - key: gamedev
+    name: 游戏开发
+    en: Game Dev
+    desc: Godot / 引擎折腾 / 关卡设计，一个规则怪谈 demo 的成长史。
+    color: "#3f7fd6"
+    bg: "rgba(63,127,214,.10)"
+    icon: gamepad
+  - key: essay
+    name: 随笔
+    en: Essay
+    desc: 没有主题的碎碎念，想到哪写到哪。
+    color: "#d9803f"
+    bg: "rgba(217,128,63,.10)"
+    icon: file
+  - key: reading
+    name: 读书
+    en: Reading
+    desc: 读过的书、划过的线，和一点迟到的感想。
+    color: "#8a5bd6"
+    bg: "rgba(138,91,214,.10)"
+    icon: library
+  - key: tools
+    name: 工具
+    en: Tools
+    desc: 用过的软件、脚本和配置，能省时间的都记一笔。
+    color: "#3f9ed6"
+    bg: "rgba(63,158,214,.10)"
+    icon: wrench
+  - key: life
+    name: 生活
+    en: Life
+    desc: 吃过的饭、去过的地方，以及和代码无关的那部分。
+    color: "#4fa35b"
+    bg: "rgba(79,163,91,.10)"
+    icon: heart
+
+# 菜单
+menu:
+  首页: /
+  板块: /topics/
+  归档: /archives/
+  标签: /tags/

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="<%= config.language || 'zh-CN' %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <div class="progress-bar"></div>
+  <%- partial('_partial/header') %>
+
+  <%
+    var cats = page.categories && page.categories.length ? page.categories.toArray() : [];
+    var tags = page.tags && page.tags.length ? page.tags.toArray() : [];
+    var plain = String(page.content || '').replace(/<[^>]+>/g, '').length;
+    var mins = Math.max(1, Math.round(plain / 400));
+  %>
+
+  <main class="wrap">
+    <div class="post-layout">
+      <article>
+        <header class="post-head">
+          <div class="crumb">
+            <a href="<%- url_for('/') %>">首页</a>
+            <% if (cats.length) { %>
+              / <a href="<%- url_for('/topics/') %>#<%= cats[0].slug || cats[0].name %>"><%= cats[0].name %></a>
+            <% } %>
+            / <%= page.title %>
+          </div>
+          <h1><%= page.title %></h1>
+          <div class="post-meta">
+            <time datetime="<%= page.date.toISOString() %>"><%= date(page.date, 'YYYY-MM-DD') %></time>
+            <span class="sep"></span>
+            <span>约 <%= mins %> 分钟</span>
+            <% if (cats.length) { %>
+              <span class="sep"></span>
+              <span><%= cats.map(function (c) { return c.name; }).join(' · ') %></span>
+            <% } %>
+          </div>
+          <% if (cats.length || tags.length) { %>
+          <div class="post-tags">
+            <% cats.forEach(function (c) { %>
+              <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= c.slug || c.name %>"><%= c.name %></a>
+            <% }); %>
+            <% tags.forEach(function (t) { %>
+              <a class="chip" href="<%- url_for(t.path) %>"><%= t.name %></a>
+            <% }); %>
+          </div>
+          <% } %>
+        </header>
+
+        <div class="post-body">
+          <%- page.content %>
+        </div>
+
+        <footer class="post-foot" style="margin-top:40px;padding-top:22px;border-top:1px solid var(--line)">
+          <% cats.forEach(function (c) { %>
+            <a class="chip chip-accent" href="<%- url_for('/topics/') %>#<%= c.slug || c.name %>"><%= c.name %></a>
+          <% }); %>
+          <a class="read-more" href="<%- url_for('/archives/') %>">查看归档
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+          </a>
+        </footer>
+
+        <nav class="post-nav">
+          <% if (page.prev) { %>
+            <a class="post-nav-item" href="<%- url_for(page.prev.path) %>">
+              <span>上一篇</span>
+              <strong><%= page.prev.title %></strong>
+            </a>
+          <% } %>
+          <% if (page.next) { %>
+            <a class="post-nav-item next" href="<%- url_for(page.next.path) %>">
+              <span>下一篇</span>
+              <strong><%= page.next.title %></strong>
+            </a>
+          <% } %>
+        </nav>
+      </article>
+
+      <aside class="toc-card">
+        <div class="widget toc">
+          <div class="toc-title">本页目录</div>
+          <ol id="toc-list"></ol>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <%- partial('_partial/footer') %>
+</body>
+</html>

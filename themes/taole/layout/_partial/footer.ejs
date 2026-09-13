@@ -1,0 +1,16 @@
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>© <%= new Date().getFullYear() %> <%= config.author || config.title %> · <%= theme.signature %></div>
+    <div>
+      <a href="<%- url_for('/topics/') %>">板块</a> ·
+      <a href="<%- url_for('/archives/') %>">归档</a> ·
+      <a href="<%- url_for('/tags/') %>">标签</a>
+    </div>
+  </div>
+</footer>
+
+<button class="to-top" type="button" aria-label="回到顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script src="<%- url_for('/js/theme.js') %>"></script>

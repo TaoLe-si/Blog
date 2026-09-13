@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="<%= config.language || 'zh-CN' %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <%- partial('_partial/header') %>
+
+  <%
+    // 归档页按年份分组
+    var groups = {};
+    page.posts.each(function (post) {
+      var y = date(post.date, 'YYYY');
+      if (!groups[y]) groups[y] = [];
+      groups[y].push(post);
+    });
+    var years = Object.keys(groups).sort().reverse();
+  %>
+
+  <section class="topics-hero">
+    <div class="wrap">
+      <div class="crumb" style="margin-bottom:12px"><a href="<%- url_for('/') %>">首页</a> / 归档</div>
+      <h1>归档</h1>
+      <p>按时间倒序的全部 <%= site.posts.length %> 篇文章。</p>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div style="padding:40px 0 76px">
+      <% years.forEach(function (y) { %>
+        <h3 class="tl-year"><%= y %></h3>
+        <div class="timeline" style="margin-bottom:40px">
+          <% groups[y].forEach(function (post) { %>
+            <div class="tl-item">
+              <time datetime="<%= post.date.toISOString() %>"><%= date(post.date, 'MM-DD') %></time>
+              <a href="<%- url_for(post.path) %>"><%= post.title %></a>
+            </div>
+          <% }); %>
+        </div>
+      <% }); %>
+
+      <% if (!page.posts.length) { %>
+        <div class="empty">还没有文章。</div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- partial('_partial/footer') %>
+</body>
+</html>

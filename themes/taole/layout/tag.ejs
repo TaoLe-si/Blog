@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="<%= config.language || 'zh-CN' %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <%- partial('_partial/header') %>
+
+  <section class="topics-hero">
+    <div class="wrap">
+      <div class="crumb" style="margin-bottom:12px"><a href="<%- url_for('/') %>">首页</a> / <a href="<%- url_for('/tags/') %>">标签</a> / <%= page.tag || '全部标签' %></div>
+      <h1><%= page.tag ? '#' + page.tag : '标签' %></h1>
+      <p><%= page.tag ? '该标签下的全部文章。' : '全部标签，点击查看对应文章。' %></p>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div style="padding:40px 0 76px">
+      <% if (!page.tag) { %>
+        <div class="tag-cloud" style="margin-bottom:30px;padding-bottom:22px;border-bottom:1px solid var(--line)">
+          <% site.tags.sort('length', -1).each(function (tag) { %>
+            <a href="<%- url_for(tag.path) %>"><%= tag.name %> <span style="color:var(--text-mute)"><%= tag.length %></span></a>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <div class="post-list">
+        <% page.posts.each(function (post) { %>
+          <%- partial('_partial/post-card', { post: post }) %>
+        <% }); %>
+      </div>
+
+      <% if (!page.posts.length) { %>
+        <div class="empty">没有文章。</div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- partial('_partial/footer') %>
+</body>
+</html>

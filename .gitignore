@@ -1,0 +1,20 @@
+# 依赖
+node_modules/
+package-lock.json
+yarn.lock
+
+# Hexo 生成产物（由 GitHub Actions 构建到 main 分支）
+public/
+.deploy_git/
+db.json
+
+# 本地预览 / 编辑器
+.workbuddy/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# 迁移前的旧静态产物（已废弃）
+_legacy_*/

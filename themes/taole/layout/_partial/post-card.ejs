@@ -1,0 +1,35 @@
+<%
+  var excerpt = post.excerpt || post.description || post.content;
+  // 去掉 html 标签，截断
+  var plain = String(excerpt).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (plain.length > 110) plain = plain.slice(0, 110) + '…';
+  var mins = Math.max(1, Math.round((post.content || '').replace(/<[^>]+>/g, '').length / 400));
+  var cats = post.categories && post.categories.length ? post.categories.toArray() : [];
+  var tags = post.tags && post.tags.length ? post.tags.toArray() : [];
+%>
+<a class="post-card reveal" href="<%- url_for(post.path) %>">
+  <div class="post-meta">
+    <time datetime="<%= post.date.toISOString() %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
+    <span class="sep"></span>
+    <span>约 <%= mins %> 分钟</span>
+    <% if (cats.length) { %>
+      <span class="sep"></span>
+      <span><%= cats.map(function (c) { return c.name; }).join(' · ') %></span>
+    <% } %>
+  </div>
+
+  <h3><%= post.title %></h3>
+  <p class="excerpt"><%= plain %></p>
+
+  <div class="post-foot">
+    <% if (cats.length) { %>
+      <span class="chip chip-accent"><%= cats[0].name %></span>
+    <% } %>
+    <% tags.slice(0, 2).forEach(function (t) { %>
+      <span class="chip"><%= t.name %></span>
+    <% }); %>
+    <span class="read-more">阅读全文
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+    </span>
+  </div>
+</a>
