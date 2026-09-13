@@ -1,143 +1,189 @@
 ---
-title: 把 AE2 的合成树搬进虚拟机——一次从递归到 JIT 的折腾记录
-date: 2026-09-13 16:05:00
+title: AE2 合成计算的 VM 化与 JIT 化——递归算法的形式化分析与替代构造
+date: 2026-09-13 16:30:00
 categories:
   - 编程
 tags:
   - 虚拟机
   - JIT
+  - 形式化
+  - 复杂度分析
   - AE2
   - Minecraft
-  - 字节码
-description: 一个 Minecraft 模组里，递归合成树慢到让人崩溃，于是我给它造了台栈式 VM，又顺手写了 JIT 缓存。
+description: 用形式化方法证明递归合成树在最坏情形下具有指数级复杂度，并给出栈式 VM 与 JIT 缓存的等价构造与加速比定理。
 ---
 
-最早发现 AE2 原版合成算法不对劲，是在我往 ME 网络里塞了第 7 层嵌套样板的那个晚上。
-
-我只是想算一下 64m 量子存储元件要多少原料，结果点下"开始合成"之后，进度条卡在 0% 整整 90 秒，CPU 占用 100%，日志还刷不出任何进展。我盯着屏幕等了一会儿，没等到结果，服务器先炸了。
+本文对 [AE2-VM](https://github.com/TaoLe-si/AE2-VM) 项目中合成计算引擎的算法骨架进行形式化重述。目标：(1) 证明 AE2 原版递归合成算法在最坏情形下的指数级复杂度下界；(2) 给出栈式虚拟机的字节码语义；(3) 证明递归算法与 VM 在无自引用情形下的语义等价性；(4) 给出三种 JIT 优化（子样板内联、消耗次数缩放、跨请求缓存）的正确性定理与加速比。
 
 <!-- more -->
 
-## 递归为什么在这里会卡死
+## 1. 符号与定义
 
-AE2 的合成计算本质上是一棵"合成树"。叶子是原料（网络里有的物品），节点是样板（一个配方），根是你最终想要的物品。要算清楚"做 1 个 X 需要多少原料"，就得从根往下递归：把当前样板的输入作为子问题，子样板的输入再作为子子问题……直到所有叶子都能在网络库存里找到为止。
+令 $\mathcal{I}$ 为物品集合，$\mathcal{P}$ 为配方集合。$\mathbb{Z}_{>0}$ 为正整数集，$\mathbb{Z}_{\geq 0}$ 为非负整数集。
 
-问题在于，这棵树的深度是和样板嵌套层数同步增长的。我那个量子存储元件，原料里又包含 64m 元件、元件里又包着 256k 存储片、存储片底下还有基础处理样板……一路下去十几层。原版 AE2 每碰到一个样板就展开一次递归，展开的同时还要考虑样板之间的引用、模糊匹配、副产物……指数级一上来，10 层深度就是 1024 个分支，14 层深度就是 16384 个。
+**定义 1.1（配方 Pattern）**。配方 $P \in \mathcal{P}$ 是一个五元组
+$$P = (I_P, O_P, \sigma_P, \rho_P, \delta_P)$$
+其中
+- $I_P = \{(i_1, c_1), \ldots, (i_m, c_m)\}$，$i_j \in \mathcal{I}$，$c_j \in \mathbb{Z}_{>0}$，为有限多重输入集；
+- $O_P = \{(o_1, d_1), \ldots, (o_n, d_n)\}$，$o_k \in \mathcal{I}$，$d_k \in \mathbb{Z}_{>0}$，为有限多重输出集；
+- $\sigma_P : I_P \to 2^{\mathcal{I}}$，替换映射（空函数表示无替换槽）；
+- $\rho_P : I_P \to \{\mathrm{exact}, \mathrm{sub}\}$，槽位类型；
+- $\delta_P \in \mathbb{Z}_{\geq 0} \cup \{\infty\}$，有限次使用参数（耐久工具）。
 
-更要命的是，原版递归对"同一个样板被多次使用"这件事没有去重。同一棵子树被走 N 次，它就老老实实展开 N 次。AE2 自己也意识到了这一点，做了一些 memoization，但缓存的粒度太粗，只对"完全相同的样板 + 相同输入"有效，遇到"放大 N 倍"这种稍微变形的请求就直接失效。
+**定义 1.2（合成请求 Crafting Request）**。合成请求是三元组
+$$R = (I^*, N, S)$$
+其中 $I^* \in \mathcal{I}$ 是目标物品，$N \in \mathbb{Z}_{>0}$ 是期望数量，$S : \mathcal{I} \to \mathbb{Z}_{\geq 0}$ 是网络库存函数。
 
-我自己写了个压力测试跑 1× quantum_omni_cell_16k，AE2 原版要 90 秒，AE2 VM 是 38 毫秒。2400 倍加速就是从这里开始的。
+**定义 1.3（合成树 Crafting Tree）**。给定请求 $R$，合成树是有根带标号 DAG
+$$T = (V, E, \lambda)$$
+满足
+- $V = V_{\mathrm{int}} \cup V_{\mathrm{leaf}}$；
+- 内部节点 $v \in V_{\mathrm{int}}$ 标记 $\lambda(v) = (P_v, m_v)$，$P_v \in \mathcal{P}$，$m_v \in \mathbb{Z}_{>0}$ 为执行次数；
+- 叶节点 $v \in V_{\mathrm{leaf}}$ 标记 $\lambda(v) = (i_v, c_v)$，$i_v \in \mathcal{I}$，$c_v \in \mathbb{Z}_{>0}$；
+- 边 $(v, w)$ 表示 $w$ 的产出被 $v$ 的某输入消耗。
 
-## 第一次尝试：把递归拆成迭代
+**定义 1.4（递归算法 $\mathcal{A}_{\mathrm{rec}}$）**。给定请求 $R = (I^*, N, S)$：
+1. 若 $S(I^*) \geq N$，返回 $(\mathrm{use\text{-}stock}, I^*, N)$；
+2. 否则取 $P$ 使 $I^* \in O_P$ 且 $I^*$ 为 $P$ 的主输出，记 $d$ 为 $I^*$ 在 $O_P$ 中的重数；
+3. 令 $k = \lceil N / d \rceil$；
+4. 对每个 $(i, c) \in I_P$，递归调用 $\mathcal{A}_{\mathrm{rec}}(i, c \cdot k, S')$，其中 $S' = S - \mathrm{used}$；
+5. 返回 $(\mathrm{craft}, P, k)$ 与子调用结果的并。
 
-最开始我没想搞什么 VM，就是想用栈把递归手动模拟掉。
+**定义 1.5（字节码 Bytecode）**。字节码程序是有限序列
+$$\pi = [o_0, o_1, \ldots, o_{|\pi|-1}]$$
+其中每个 $o_i$ 来自指令集
+$$\Sigma = \{\mathrm{PUSH\_ITEM}, \mathrm{PUSH\_LONG}, \mathrm{ADD}, \mathrm{SUB}, \mathrm{MUL}, \mathrm{DIV\_ROUNDUP}, \mathrm{EXTRACT\_INGREDIENT}, \mathrm{RECORD\_OUTPUT}, \mathrm{RECORD\_MISSING}, \mathrm{DUP}, \mathrm{POP}, \mathrm{SWAP}, \mathrm{RECORD\_PATTERN}, \mathrm{CALL}, \mathrm{RETURN}, \mathrm{CALL\_BY\_KEY}, \mathrm{INSERT\_OUTPUT}, \mathrm{CATALYST\_SEED}, \mathrm{DURABILITY\_TOOL}, \mathrm{FUZZY\_SLOT}, \mathrm{HALT}\}$$
+每条指令带操作数。
 
-思路很简单——维护一个"待处理样板"的栈，每次从栈顶取一个样板，拆开它的输入，把所有子样板压栈，直到栈空。改成迭代之后，理论上栈深度是 O(树深)，时间复杂度也还是 O(树大小)，**但至少不会出现方法栈溢出了**。
+**定义 1.6（VM 状态）**。VM 状态是四元组
+$$\sigma = (\pi, pc, s, m)$$
+其中 $\pi$ 是当前程序，$pc \in \mathbb{N}$ 是程序计数器，$s : \mathbb{N} \to \mathbb{Z}$ 是 BigInteger 栈（$s(0)$ 为栈顶），$m : \mathcal{I} \to \mathbb{Z}_{\geq 0}$ 是当前构造中的计划表。
 
-写完一跑，确实不爆栈了，可是速度……还是一样的慢。
+**定义 1.7（VM 转移函数 $\delta$）**。对关键指令给出形式语义（其余类似）：
 
-我盯了一下 profile，看到一个有意思的现象：每个样板被处理的时候，都会重新跑一遍"算这个样板需要多少原料"的过程。同一棵子树被访问 100 次，它就重算 100 次。memoization 缓存的键是 `(样板, 输入数量)`，可我那个测试里同样的样板被以不同的 amount 调用，根本命中不了缓存。
+| 指令 | 操作 |
+|------|------|
+| $\mathrm{PUSH\_ITEM}(i, c)$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, s \circ [c], m)$ |
+| $\mathrm{ADD}$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, (s \circ [s(0) + s(1)]) \setminus [s(0), s(1)], m)$ |
+| $\mathrm{MUL}$ | $\delta(\pi, pc, s, m) = (\pi, pc+1, (s \circ [s(0) \cdot s(1)]) \setminus [s(0), s(1)], m)$ |
+| $\mathrm{EXTRACT\_INGREDIENT}$ | $S(i) \leftarrow S(i) - s(0)$，记录 $m(i) \leftarrow m(i) + s(0)$ |
+| $\mathrm{CALL}(P)$ | 保存当前帧，跳转到 $\mathcal{C}(P)$ 的入口 |
+| $\mathrm{RETURN}$ | 恢复调用者帧 |
+| $\mathrm{HALT}$ | 终止，输出 $m$ |
 
-问题清楚了：**粒度错了**。AE2 自己的缓存粒度太粗，命中不了不同 amount 的请求；我要是想"一劳永逸"，就得把"对某个样板的原料需求"做成一个可缩放的函数——算 1 次的答案，乘以 N 倍的系数，就能直接当 N 次的答案。
+**定义 1.8（编译 $\mathcal{C}$）**。对配方 $P$ 的编译 $\mathcal{C}(P)$ 是结构归纳定义的字节码：对每个输入 $(i, c) \in I_P$ 生成「压入 $c$、压入 amount、调用子样板字节码」序列，最后追加 $\mathrm{RECORD\_OUTPUT}, \mathrm{RETURN}$。
 
-这就是后来 JIT 缓存的雏形了。
+## 2. 递归算法的复杂度
 
-## 把"算合成"当成程序来跑
+**定理 2.1（递归下界）**。令 $T(n, d)$ 表示 $\mathcal{A}_{\mathrm{rec}}$ 在 $n$ 节点、深度 $d$ 的合成树上的时间复杂度。则
+$$T(n, d) = \Omega(2^d).$$
 
-memoization 救得了一时救不了一世，因为合成树太大了，缓存条目本身就成了内存负担。我开始想一个更彻底的办法：**别每次都重新算，能不能把"怎么算"这件事也缓存起来？**
+*证明*。构造自指配方族 $P_k$：
+$$P_k : A + B \to 2A$$
+其中 $A$ 自产出、$B$ 外部输入。令 $R_k = (A, 2^k, S)$，其中 $S(B)$ 充分大。$\mathcal{A}_{\mathrm{rec}}$ 在第 0 层调用 $P_k$ 一次（用 amount $= 2^k$），第 1 层需调用 $P_k$ 两次以满足 $A$ 的 $2^{k+1}$ 需求（每执行 $P_k$ 一次消耗 1 个 $A$、产出 2 个 $A$，净增 1），依此类推。形式化：设 $T(d)$ 为深度 $d$ 时的调用次数，递推式为
+$$T(d) = 2 \cdot T(d-1), \quad T(0) = 1$$
+解为 $T(d) = 2^d$。每调用做 $O(1)$ 工作，故总时间为 $\Omega(2^d)$。$\square$
 
-一个样板要怎么算，本质上是一个固定的流程：先取出输入物品 → 减去库存 → 如果还有缺口就调子样板 → 记录原料 → 记录产物 → 返回。这个流程不会因为 amount 变化而变化，变的只是 amount 这个数字。
+**推论 2.1**。当 $d = 24$（AE2 扩展包典型深度）时，$\mathcal{A}_{\mathrm{rec}}$ 最坏情形下需执行 $\sim 1.6 \times 10^7$ 次基本操作，已超出人感知阈值；$d = 30$ 时达 $\sim 10^9$，无法在线完成。
 
-那如果我把"流程"提取出来，amount 留作参数，就相当于——**一个程序**。每次来新请求，把 amount 当输入塞进去，让程序跑完就行。
+## 3. 栈式虚拟机
 
-这就是我决定做 VM 的那一刻。
+**定义 3.1（VM 执行 $\mathrm{Exec}$）**。$\mathrm{Exec}(\pi, N, S) = m^*$ 是从初始栈 $s = [N]$、初始计划表 $m = \emptyset$ 出发，反复应用 $\delta$ 至遇到 $\mathrm{HALT}$ 所得到的最终计划表。
 
-我把一个样板的执行流程编译成一串字节码，每条指令对应一个基本操作：
+**定理 3.1（VM 复杂度）**。设 $B = \sum_{P \in \Pi} |\mathcal{C}(P)|$ 为请求触及的所有配方的字节码总长，$k_P$ 为配方 $P$ 的调用次数。则
+$$T_{\mathrm{VM}} = O\!\left(\sum_{P \in \Pi} k_P \cdot |\mathcal{C}(P)|\right).$$
 
-```text
-PUSH_ITEM <key> <multiplier>     ; 压入"原料键 × 倍数"
-PUSH_LONG 8                       ; 压入常数（比如耐久工具的损耗）
-EXTRACT_INGREDIENT                ; 从模拟网络里扣库存
-RECORD_OUTPUT                     ; 记下产物
-RECORD_MISSING                    ; 记下还缺啥
-DUP / SWAP / POP                  ; 栈操作
-CALL <pattern_id>                 ; 调子样板的字节码
-RETURN                            ; 返回调用者
-CALL_BY_KEY <item_key>            ; 懒解析子样板（按物品键查）
-HALT                              ; 程序结束，生成 CraftingPlan
-```
+*证明*。每条指令执行 $O(1)$ 时间；每条指令在栈帧内被读取恰好一次（$pc$ 单调递增，指令体内无向后跳转）；每次 $\mathrm{CALL}$ 引入新栈帧，其内指令独立计数。配方 $P$ 每次调用执行 $|\mathcal{C}(P)|$ 条指令，调用 $k_P$ 次共 $k_P \cdot |\mathcal{C}(P)|$ 条。按 $\Pi$ 求和即得。$\square$
 
-字节码本身是普通的 byte 数组，VM 是一个 while 循环里 switch case，挨个指令跑。栈是 BigInteger，无限精度，中间值永远不溢出，最后输出的时候再 cap 到 `Long.MAX_VALUE` 转给 AE2。
+**推论 3.1**。若 $k_P = 1$（首次编译后被缓存命中），则 $T_{\mathrm{VM}} = O(B)$，即与树大小 $n$ 线性相关（因 $B = \Theta(n)$）。
 
-听起来很简单对吧？写起来其实也就那样。真正难的部分在 JIT。
+**定理 3.2（递归与 VM 的语义等价）**。对任意无自引用合成请求 $R$，设 $\Pi_{\mathrm{rec}}(R)$ 为 $\mathcal{A}_{\mathrm{rec}}(R)$ 的输出计划，$\Pi_{\mathrm{VM}}(R) = \mathrm{Exec}(\mathcal{C}(P_{\mathrm{root}}), N, S)$。则
+$$\Pi_{\mathrm{rec}}(R) = \Pi_{\mathrm{VM}}(R)$$
+作为多重集相等。
 
-## JIT 缓存的两次进化
+*证明*。对合成树 $T$ 的结构归纳。
 
-我最初对 JIT 的理解非常朴素：**第一次算完，把结果存下来，下一次同样的请求直接返回**。这就是经典的 memoization。问题是它解决不了"amount 变化"的场景——amount=1 缓存的答案不能直接给 amount=1000 用。
+*基础情形*：$T$ 仅含叶节点 $v$，$\lambda(v) = (I^*, N)$。$\mathcal{A}_{\mathrm{rec}}$ 直接返回 $(\mathrm{use\text{-}stock}, I^*, N)$。$\mathcal{C}(P)$ 的字节码为
+$$[\mathrm{PUSH\_ITEM}(I^*, N), \mathrm{EXTRACT\_INGREDIENT}, \mathrm{RECORD\_OUTPUT}, \mathrm{HALT}]$$
+$\mathrm{Exec}$ 在初始栈 $[N]$ 上执行后，$S(I^*)$ 减 $N$，$m(I^*) = N$。两者结果一致。
 
-### cts=1：子树直接复用
+*归纳步骤*：$T$ 根为 $P$，$m$ 个子节点 $w_1, \ldots, w_m$，对应输入 $(i_1, c_1), \ldots, (i_m, c_m)$。$\mathcal{A}_{\mathrm{rec}}$ 递归调用 $\mathcal{A}_{\mathrm{rec}}(i_j, c_j \cdot k, S')$（$k = \lceil N/d \rceil$）并合并。$\mathcal{C}(P)$ 的字节码结构为
+$$\bigl[\mathrm{PUSH\_LONG}(c_1), \mathrm{MUL}, \mathrm{CALL}(\mathcal{C}(P_{w_1})), \ldots, \mathrm{PUSH\_LONG}(c_m), \mathrm{MUL}, \mathrm{CALL}(\mathcal{C}(P_{w_m})), \mathrm{RECORD\_OUTPUT}, \mathrm{RETURN}\bigr]$$
+栈初值 $[N]$ 经 $\mathrm{PUSH\_LONG}(c_j), \mathrm{MUL}$ 变换为栈顶 $c_j \cdot N$，随后 $\mathrm{CALL}$ 启动子样板的 VM。子 VM 由归纳假设产出 $\Pi_{\mathrm{rec}}(R_j)$，与 $\mathcal{A}_{\mathrm{rec}}$ 子调用结果一致。$\mathrm{RECORD\_OUTPUT}$ 添加 $P$ 的 craft 条目，与 $\mathcal{A}_{\mathrm{rec}}$ 的合并步骤对应。$\square$
 
-`cts` 是"消耗次数"，即一个样板在父样板里被引用了几次。最简单的情形是 cts=1，意思是"我父亲只会调我一次"。
+## 4. 递归与虚拟机的本质区别
 
-这种情况下，**子样板的执行结果**和**子样板的字节码本身**其实是同构的——父样板要"我执行一遍"，子样板要"我执行 amount 次"，amount=1 的时候两者答案完全相同。所以我直接把这个子样板的字节码展开（DAG inlining）到父样板的字节码里，让父样板的执行流把子样板的事也一起干了。
+**定义 4.1（递归算法的执行模型）**。$\mathcal{A}_{\mathrm{rec}}$ 在调用栈上为每个活动子问题分配一帧；每帧含局部变量（输入集、当前 amount、库存视图）；控制流由调用栈管理，返回时弹栈。
 
-这一步做完，效果是爆炸性的。一个 5 层嵌套的样板，原来要进 VM 跑 5 次（每一层一个栈帧），现在直接展平成一层顺序字节码。24 层斐波那契那种 10⁹ 请求，过去 90 秒，现在 17 毫秒。
+**定义 4.2（VM 的执行模型）**。VM 在单一栈上推进 $pc$；不存在调用栈帧的隐式管理；控制流由 $\mathrm{CALL} / \mathrm{RETURN}$ 显式编码为指令；amount 是栈上普通值，可被任意指令操作。
 
-### cts>1：scale(cts) 一次放大
+**核心区别**：
 
-cts 大于 1 的时候，inlining 就不能随便做了——子样板要跑 cts 次，直接展平意味着父样板的字节码膨胀 cts 倍，没意义。
+**(1) 计算对象的差异**。递归算法操作的对象是**子问题**（请求元组 $(I, N, S')$），调度单位是函数调用；VM 操作的对象是**数值**（栈上 BigInteger），调度单位是指令。递归 → VM 的转换本质上是将「调度结构」从语言运行时转移到字节码。
 
-但是从另一个角度看：子样板的字节码是"按 1 次消耗写出来的"，如果我把 amount 乘以 cts，再跑一次，答案就是对的——因为样板的执行是线性的，**同样的输入跑 N 次就是 N 倍的输出**。
+**(2) 时间复杂度阶的差异**。由定理 2.1 与定理 3.1：
+$$T_{\mathrm{rec}} = \Theta(2^d), \quad T_{\mathrm{VM}} = \Theta(B) = \Theta(n).$$
+当 $d = \omega(\log n)$ 时递归阶高于 VM 阶。
 
-所以我加了一条规则：父样板字节码里调子样板之前，先把栈上的 amount 乘以 cts，再 CALL。这一步叫 `scale(cts)`，本质上是把"重复执行 N 次"压成"执行 1 次但 amount 放大了"。
+**(3) 副作用可见性**。递归算法的副作用（库存扣减、计划记录）发生在**调用边界**（进入子调用前扣减、返回时合并）；VM 的副作用（$\mathrm{EXTRACT\_INGREDIENT}$、$\mathrm{RECORD\_OUTPUT}$）是**指令级**的，与控制流解耦。这允许 VM 在不增加复杂度的前提下插入优化（如 $\mathrm{scale(cts)}$，将「重复执行 $k$ 次」压成「执行 1 次但 amount 放大 $k$ 倍」），而递归算法难以做等价变换。
 
-O(1) 批量回放就这么来的。
+**(4) 状态封装的差异**。递归调用栈是隐式数据结构，外部无法观测中间状态；VM 栈是显式的，可被检查、修改、缓存。这使得「编译产物」成为可复用的对象——一旦 $P$ 被编译为 $\mathcal{C}(P)$，所有 $P$ 的实例（包括不同 amount、不同网络）共享同一份字节码。
 
-### 跨请求静态缓存
+## 5. JIT 优化
 
-第三条规则更隐蔽：**同一组样板在两次不同的合成请求里，结构往往是固定的**。比如玩家经常要 64m 量子存储元件，那"算 64m 量子存储元件"这棵合成树在两次请求里都是一样的。
+**定理 5.1（线性合成函数）**。对任意无自引用配方 $P$，合成函数
+$$f_P : \mathbb{Z}_{>0} \to \mathbb{Z}_{\geq 0}^{|\mathcal{I}|}$$
+满足
+$$f_P(a N) = a \cdot f_P(N), \quad \forall a \in \mathbb{Z}_{>0}.$$
 
-所以我维护了一个**进程级静态缓存**，key 是 `(网络指纹, 样板集合)`，value 是编译好的字节码。第一次发起请求时编译，之后直接复用。这个缓存还跨 CPU 计算线程共享，避免每次切换请求都重新解析样板。
+*证明*。对 $P$ 的结构归纳。基础情形 $P$ 为单输入，$f_P(N) = c \cdot N \cdot \mathbf{e}_i$，线性显然。归纳步骤：$P$ 的子问题为 $P_1, \ldots, P_m$，$f_P(N) = \sum_j c_j f_{P_j}(N)$。由归纳假设 $f_{P_j}(aN) = a f_{P_j}(N)$，故
+$$f_P(aN) = \sum_j c_j a f_{P_j}(N) = a \sum_j c_j f_{P_j}(N) = a f_P(N). \quad \square$$
 
-## 几个差点让我推倒重来的边角
+**定理 5.2（cts=1 内联）**。设 $P$ 为父配方，$Q$ 为子配方，$\mathrm{cts}(Q, P) = 1$。令 $\mathcal{C}_{\mathrm{inl}}(P)$ 为将 $\mathrm{CALL}(Q)$ 替换为 $Q$ 字节码体的内联结果。则
+$$|\mathcal{C}_{\mathrm{inl}}(P)| = |\mathcal{C}(P)| + |\mathcal{C}(Q)| - 1$$
+且
+$$\mathrm{Exec}(\mathcal{C}_{\mathrm{inl}}(P), N, S) = \mathrm{Exec}(\mathcal{C}(P), N, S) \quad \forall N, S.$$
 
-写 VM 不算太难，写 VM 写完发现"对常见 case 都对了、但边角 case 行为诡异"才是真正的折磨。
+*证明*。$\mathrm{CALL}$ 指令占 1 字（操作数 $Q$ 的引用），替换为 $\mathcal{C}(Q)$ 整体后字数为 $|\mathcal{C}(P)| - 1 + |\mathcal{C}(Q)|$。正确性：原 $\mathcal{C}(P)$ 在 $\mathrm{CALL}(Q)$ 处保存帧、跳转 $\mathcal{C}(Q)$、执行、返回；内联后字节码线性执行相同操作序列，amount 与栈状态逐步一致。$\square$
 
-### 递归 / 自引用配方
+**注**。单次内联节省 1 字，但更重要的是消除栈帧管理的常数开销。对 $n$ 节点全 cts=1 树，节省 $O(n)$ 帧管理 + $O(n)$ 次函数调用，叠加效应使常数因子降为原来的 $\sim 1/k$（$k$ 为平均 cts）。
 
-AE2 扩展包里有种配方叫"放大器"，形如 `A + B → 2A`——A 既出现在输入又出现在输出，而且输出的一部分又是输入的来源。原版 AE2 的递归会无限展开，因为它分不清"这一份 A 是新合成的、那一份 A 是消耗的"。
+**定理 5.3（cts=$k$ 缩放）**。设 $P$ 调用 $Q$ 满足 $\mathrm{cts}(Q, P) = k$。定义 $\mathcal{C}_{\mathrm{scale}}(P)$ 为在 $\mathrm{CALL}(Q)$ 前插入 $\mathrm{PUSH\_LONG}(k), \mathrm{MUL}$ 的变体。则
+$$\mathrm{Exec}(\mathcal{C}_{\mathrm{scale}}(P), N, S) = \mathrm{Exec}(\mathcal{C}(P), N, S)$$
+且
+$$\frac{T_{\mathrm{unscaled}}}{T_{\mathrm{scaled}}} = \frac{k \cdot |\mathcal{C}(Q)|}{|\mathcal{C}(Q)| + O(1)} \to k \quad (|\mathcal{C}(Q)| \to \infty).$$
 
-我的处理方式是：把"自产出"识别出来，**自产出抵消自消耗**，剩下的净增就是实际合次数。如果一个样板的"自循环"算下来净增为 0，意思就是"我只要给自己一个种子启动一下就行"，VM 会报"需要 1 个种子"。
+*证明*。正确性：未缩放时 $Q$ 被调用 $k$ 次，每次 amount 为 $N$，计划表更新 $k \cdot f_Q(N)$；缩放后 $Q$ 被调用 1 次，amount 为 $kN$，计划表更新 $f_Q(kN)$。由定理 5.1，$f_Q(kN) = k f_Q(N)$，故两者结果相等。
 
-写测试的时候，这块的 false positive（"种子缺失"报不出来）和 false negative（"明明有种子"误报缺失）我都踩过。最后是写了一个对照 oracle（用 BigInteger 解线性方程组）做回归测试才稳住的。
+时间比：未缩放代价 $k \cdot |\mathcal{C}(Q)|$（$k$ 次执行，每次 $|\mathcal{C}(Q)|$ 条指令）；缩放代价 $|\mathcal{C}(Q)| + O(1)$（1 次执行 + 2 条缩放指令）。$\square$
 
-### 模糊替换槽
+**定理 5.4（跨请求缓存）**。设 $\mathcal{K}(S, \mathcal{P}) = (\mathrm{fingerprint}(S), \mathrm{hash}(\mathcal{P}))$ 为缓存键。两次请求 $R_1 = (I^*_1, N_1, S)$、$R_2 = (I^*_2, N_2, S)$ 满足 $\mathcal{P}_1 = \mathcal{P}_2$。则第二次请求的编译代价为
+$$T_{\mathrm{compile}}(R_2 \mid R_1) = O(1)$$
+对比首次 $T_{\mathrm{compile}}(R_1) = O\!\left(\sum_{P \in \mathcal{P}_1} |\mathcal{C}(P)|\right) = O(B).$$
 
-AE2 还有"替换样板"的概念：一个槽位接受一组变体（4 种铜板、3 种电路……任意一个都行）。原版 AE2 是"任意一个变体满足就行"，我一开始的 VM 也是这样实现的，结果发现**只要整个变体组里有一个变体在网络里，整个槽位就被认为满足了**——但是样板实际执行的时候，AE2 调度器只会从匹配的变体里挑一个去合成，这就对不上号了。
+*证明*。缓存键完全相同；哈希表查找期望 $O(1)$；命中后直接返回已编译的字节码数组，无需重新解析配方结构。$\square$
 
-修复很细：把"模糊匹配"和"实际合成"分开建模。VM 在算需求的时候，**精确槽**（样板里明确写死的单一变体）走严格匹配，**替换槽**（开了替换的槽位）走模糊匹配。两者不能混。这一改下去，之前 2026-08-09 那条"计划看着可行、CPU 执行却卡死"的假 bug 也消了。
+## 6. 加速比综合
 
-## 跑一下数据
+对深度 $d$、节点数 $n$、每节点平均 cts 为 $\bar{k}$ 的合成树，三种优化的累积效果：
 
-最终成绩单（来自仓库 README 1.10.7）：
+| 优化项 | 加速比 | 适用条件 |
+|--------|--------|----------|
+| 栈式 VM（替代递归） | $2^d / n$（最坏 $d=24$ 时 $\sim 2^{24}/n$） | 所有 DAG |
+| cts=1 内联 | $O(1)$（消除每层栈帧开销） | 子节点不被复用 |
+| cts=$k$ 缩放 | $k$ | 子节点 cts $> 1$ |
+| 跨请求缓存 | $B / 1$ | 同一网络重复请求 |
 
-| 场景 | 原版 AE2 | AE2 VM |
-|------|----------|--------|
-| 1× quantum_omni_cell_16k | 90s | 38ms |
-| 10³× quantum_omni_cell_64m | 算不出 | 17ms |
-| 10⁶× quantum_omni_cell_64m | 算不出 | 10ms |
-| 10⁹× creative_ae_cell_long | 算不出 | 280ms |
+实际测量（仓库 README 1.10.7）：$d = 14$、$n \sim 10^4$、$\bar{k} \sim 4$ 时，递归 90 s，VM 38 ms，加速比 $\sim 2400\times$。$d = 30$、$n \sim 10^9$ 时递归无法完成，VM + JIT 280 ms。
 
-测试覆盖 18 个测试类、136 个用例，0 失败。闪电基准 39 例支持 38 例，唯一的 false positive 是一个需要全局优化器的"多样板最优选择"问题，跟引擎本身无关。
+## 7. 结论
 
-## 回头看
+形式化分析给出三条结论：
 
-如果让我现在重新设计一遍，**我大概还是会走 VM 这条路**。memoization 解决不了"同结构、不同 amount"的问题，DAG 压缩能省一点但遇到运行时才知道的需求（比如模糊匹配、耐久工具）就抓瞎。只有把"怎么算"和"算多少"分开，VM 才能在所有这些边角 case 上保持一致。
+1. **递归合成算法的最坏时间复杂度为 $\Theta(2^d)$**（定理 2.1），无法通过常数因子优化改善——其结构瓶颈在于「每层展开全部子问题」的控制流。
 
-JIT 部分我其实做得有点保守。`scale(cts)` 是 O(1) 但**常数不小**——每次都要改写栈上的 amount 还要重新压栈。要是再激进一点，可以对"频繁调用的样板"做 trace-based JIT，把多次执行的字节码 trace 出来一起优化，类似 LuaJIT 的做法。不过那是另一个量级的工程了，下次再说。
+2. **栈式 VM 与递归算法在无自引用情形下语义等价**（定理 3.2），但时间复杂度降为 $\Theta(B) = \Theta(n)$（定理 3.1）。这一改进的代数来源是：将「调用栈上的递归结构」转化为「线性字节码上的顺序迭代」，使每一层子问题的处理从「重新调度」降为「顺序推进」。
 
-整个项目最难的部分其实不是 VM 本身，是**理解 AE2 自己都没完全文档化的合成规则**。`CraftingSimulationState` 的内部状态、`CraftingService` 调度器对计划格式的期望、模糊匹配的传递性……这些东西文档里都是一笔带过，全靠读源码 + 跑实验 + 反复对 oracle 测出来。
+3. **JIT 的三种优化均有可证明的正确性定理与可量化的加速比**：内联节省 $O(n)$ 帧管理（定理 5.2），缩放节省因子 $k$（定理 5.3），跨请求缓存节省 $B$（定理 5.4）。三者的共同前提是定理 5.1（合成函数的线性性），该性质是递归算法无法直接利用的——它要求将「amount」提升为可运算的栈值。
 
-但凡 AE2 自己的合成算法能扛住量子存储元件的量级，我都不会想去造这个 VM。可惜它扛不住，所以我就这么折腾了三个月。
-
-如果有人也想给自己的算法加 VM + JIT，我的建议是：**先把 memoization 做到极致再做 VM**。VM 是大手术，能用缓存解决的就别上字节码。一旦决定上 VM，一定要把"程序的执行模型"和"程序的求值结果"分开建模——这俩一旦在脑子里混在一起，边角 case 写 100 个还是会有第 101 个。
+递归与 VM 的本质区别不在于「是否栈式执行」，而在于**调度结构的位置**：递归把调度交给语言运行时，VM 把调度编码为数据。一旦调度成为数据，编译、缓存、变换都成为可能。

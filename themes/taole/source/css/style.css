@@ -1493,3 +1493,8 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
   .pager a:active, .topic-filter button:active, .icon-btn:active,
   .nav-links a:active, .to-top:active, .chip:active { transform: none; }
 }
+
+/* KaTeX：数学块独立行，不吃段首缩进；行内公式不破坏中文换行 */
+.post-body p > .katex-display { text-indent: 0; margin: 1em 0; }
+.post-body .katex { font-size: 1em; }
+.post-body .katex-display > .katex { display: inline-block; }
