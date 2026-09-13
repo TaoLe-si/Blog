@@ -43,11 +43,10 @@
     }
   };
 </script>
-<!-- 三个 CDN 链：baomitu（360，国内最快）→ bootcdn → jsdelivr；按顺序尝试 -->
+<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
 <script>
 (function () {
   var SOURCES = [
-    'https://lib.baomitu.com/mathjax/3.2.2/es5/tex-svg.js',
     'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
     'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
   ];
@@ -57,7 +56,6 @@
     s.async = true;
     s.src = SOURCES[i];
     s.onload = function () {
-      // MathJax v3 加载完成后做一次 typeset
       if (window.MathJax && MathJax.typesetPromise) {
         MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
       }
@@ -354,7 +352,7 @@
     
       <span class="chip">散文</span>
     
-      <span class="chip">成长</span>
+      <span class="chip">回忆</span>
     
     <span class="read-more">阅读全文
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>

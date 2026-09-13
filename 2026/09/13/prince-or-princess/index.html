@@ -43,11 +43,10 @@
     }
   };
 </script>
-<!-- 三个 CDN 链：baomitu（360，国内最快）→ bootcdn → jsdelivr；按顺序尝试 -->
+<!-- 三个 CDN 链：bootcdn（国内）→ jsdelivr（国际）；按顺序尝试 -->
 <script>
 (function () {
   var SOURCES = [
-    'https://lib.baomitu.com/mathjax/3.2.2/es5/tex-svg.js',
     'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.js',
     'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js'
   ];
@@ -57,7 +56,6 @@
     s.async = true;
     s.src = SOURCES[i];
     s.onload = function () {
-      // MathJax v3 加载完成后做一次 typeset
       if (window.MathJax && MathJax.typesetPromise) {
         MathJax.typesetPromise().catch(function (e) { console.warn('MathJax typeset error:', e); });
       }
@@ -164,9 +162,9 @@
             
               <a class="chip" href="/Blog/tags/%E6%95%A3%E6%96%87/">散文</a>
             
-              <a class="chip" href="/Blog/tags/%E6%88%90%E9%95%BF/">成长</a>
-            
               <a class="chip" href="/Blog/tags/%E5%9B%9E%E5%BF%86/">回忆</a>
+            
+              <a class="chip" href="/Blog/tags/%E6%88%90%E9%95%BF/">成长</a>
             
           </div>
           
