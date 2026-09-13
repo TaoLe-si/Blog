@@ -44,4 +44,5 @@ jobs:
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
           commit_message: "Deploy: ${{ github.event.head_commit.message }}"
-          force_orphan: false
+          # 每次只留最新一棵提交，避开 hexo deploy 和 Actions 同时改 main 时的 commit_refs 失败
+          force_orphan: true
