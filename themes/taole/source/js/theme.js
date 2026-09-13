@@ -347,4 +347,34 @@
       });
     }
   }
+
+  /* ---------- 彩蛋：连点头像卡片，切换卡片背景 ---------- */
+  var pageBg = window.__PAGE_BG__;
+  var eggCard = doc.querySelector(".hero-side");
+
+  if (pageBg && pageBg.egg && eggCard) {
+    var eggNeed = pageBg.egg.clicks;
+    var eggHits = 0;
+    var eggChain = null;
+
+    eggCard.addEventListener("click", function () {
+      if (eggCard.classList.contains("is-egg")) return;
+
+      eggHits++;
+
+      // 两次点击间隔超过 900ms 视为断链，重新计数
+      if (eggChain) clearTimeout(eggChain);
+      eggChain = setTimeout(function () {
+        eggHits = 0;
+        eggChain = null;
+      }, 900);
+
+      if (eggHits >= eggNeed) {
+        eggHits = 0;
+        clearTimeout(eggChain);
+        eggChain = null;
+        eggCard.classList.add("is-egg");
+      }
+    });
+  }
 })();

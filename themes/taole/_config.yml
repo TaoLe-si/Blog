@@ -83,7 +83,7 @@ topics:
     bg: "rgba(79,163,91,.10)"
     icon: heart
 
-# 迷你音乐播放器（右下角，默认收起，不自动播放）
+# 迷你音乐播放器（右侧贴边，默认收起，不自动播放）
 # file 为站点根绝对路径（Hexo 会带上 root 前缀）
 music:
   enable: true
@@ -92,6 +92,31 @@ music:
       title: Mina Okabe - Maybe One Day
     - file: /music/keep-cold.mp3
       title: Numcha - Keep Cold
+
+# 首页随机背景图
+# veil = 黑色遮罩不透明度（0~1），越大越暗
+# 数值按「白色标题在图上最不利位置的对比度 ≥ 6:1」逐张定标，兼顾画面通透度
+background:
+  enable: true
+  images:
+    - file: /images/bg/bg.webp
+      name: 晚风车
+      veil: 0.50
+    - file: /images/bg/shanjing.webp
+      name: 山景
+      veil: 0.30
+    - file: /images/bg/xianjian.webp
+      name: 仙剑
+      veil: 0.62
+    - file: /images/bg/yanyun.webp
+      name: 烟云
+      veil: 0.62
+  # 彩蛋：连点头像卡片 N 次，把头像卡背景换成这张（仅当次会话，刷新即恢复）
+  easter:
+    enable: true
+    clicks: 10
+    file: /images/bg/sunqian.webp
+    veil: 0.34
 
 # 菜单
 menu:

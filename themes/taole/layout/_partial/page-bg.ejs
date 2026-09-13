@@ -1,0 +1,76 @@
+<%
+  /* 首页随机背景：图片列表 + 彩蛋数据，全部在浏览器端随机，不做任何缓存 */
+  var bg = theme.background || {};
+  var bgList = [];
+
+  if (bg.enable !== false && bg.images && bg.images.length) {
+    bg.images.forEach(function (it) {
+      if (!it || !it.file) return;
+      bgList.push({
+        src: url_for(it.file),
+        veil: typeof it.veil === 'number' ? it.veil : 0.55,
+        name: it.name || ''
+      });
+    });
+  }
+
+  var egg = bg.easter || {};
+  var eggData = null;
+  if (egg.enable !== false && egg.file && egg.clicks) {
+    eggData = {
+      src: url_for(egg.file),
+      veil: typeof egg.veil === 'number' ? egg.veil : 0.45,
+      clicks: parseInt(egg.clicks, 10) || 10
+    };
+  }
+
+  /* 转义 < 与行分隔符，避免数据里出现 </script> 之类截断脚本 */
+  function jsonSafe(o) {
+    return JSON.stringify(o)
+      .replace(/</g, '\\u003c')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+  }
+%>
+<% if (bgList.length) { %>
+<div class="page-bg" id="page-bg" aria-hidden="true">
+  <div class="page-bg-img"></div>
+  <div class="page-bg-veil"></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var LIST = <%- jsonSafe(bgList) %>;
+  var EGG = <%- jsonSafe(eggData) %>;
+  var root = document.documentElement;
+
+  /* 每次页面加载都重新抽一张 —— 不写 localStorage / sessionStorage */
+  var pick = LIST[Math.floor(Math.random() * LIST.length)];
+
+  root.classList.add("has-page-bg");
+  root.style.setProperty("--page-bg-image", 'url("' + pick.src + '")');
+  root.style.setProperty("--page-bg-veil", String(pick.veil));
+
+  if (EGG) {
+    root.style.setProperty("--egg-image", 'url("' + EGG.src + '")');
+    root.style.setProperty("--egg-veil", String(EGG.veil));
+  }
+
+  /* 交给 theme.js 的彩蛋模块 */
+  window.__PAGE_BG__ = { list: LIST, pick: pick, egg: EGG };
+
+  /* 预加载完成再淡入，避免"先空白后跳图" */
+  var box = document.getElementById("page-bg");
+  if (!box) return;
+
+  function ready() { box.classList.add("is-ready"); }
+  function fail() { root.classList.remove("has-page-bg"); }
+
+  var probe = new Image();
+  probe.onload = ready;
+  probe.onerror = fail;
+  probe.src = pick.src;
+  if (probe.complete && probe.naturalWidth) ready();
+})();
+</script>
+<% } %>

@@ -1144,6 +1144,164 @@ figure.highlight pre {
   .post-nav-item.next { text-align: left; }
 }
 
+/* ---------------- 首页随机背景 ---------------- */
+
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+.page-bg.is-ready { opacity: 1; }
+
+.page-bg-img {
+  position: absolute;
+  inset: 0;
+  background-image: var(--page-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.03);
+}
+
+/* 自适应暗度层：纯色块 + opacity。不能写成 rgba(9,8,16,var(--x))——
+   带 var() 的颜色函数放在 background 简写里会被整层丢弃（解析为 none） */
+.page-bg-veil {
+  position: absolute;
+  inset: 0;
+  background: #09080f;
+  opacity: var(--page-bg-veil, .55);
+}
+
+/* 固定叠加上深下浅的过渡，保证顶部导航与 hero 文字始终压得住 */
+.page-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(9, 8, 16, .34) 0%,
+      rgba(9, 8, 16, .04) 44%,
+      rgba(9, 8, 16, .18) 100%);
+}
+
+/* 图片就位后容器透明让背景透出；正文卡片本身不透明，阅读不受影响 */
+.has-page-bg main,
+.has-page-bg .site-footer { position: relative; z-index: 1; }
+
+.has-page-bg .hero {
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, .12);
+  z-index: 1;
+}
+.has-page-bg .hero h1 { color: #fff; }
+.has-page-bg .hero h1 em { color: #c8c8ff; }
+.has-page-bg .hero p { color: rgba(255, 255, 255, .8); }
+.has-page-bg .hero-tag {
+  color: rgba(255, 255, 255, .88);
+  border-color: rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .12);
+}
+.has-page-bg .hero-stats { border-top-color: rgba(255, 255, 255, .16); }
+.has-page-bg .stat { border-right-color: rgba(255, 255, 255, .14); }
+.has-page-bg .stat .num { color: #fff; }
+.has-page-bg .stat .lbl { color: rgba(255, 255, 255, .55); }
+
+/* 浮在背景上的区段标题与分页 */
+.has-page-bg .section-head h2 { color: #fff; }
+.has-page-bg .section-head span { color: rgba(255, 255, 255, .6); }
+.has-page-bg .pager { color: rgba(255, 255, 255, .7); }
+.has-page-bg .pager a {
+  color: rgba(255, 255, 255, .88);
+  border-color: rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .08);
+}
+.has-page-bg .pager a:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .5);
+  background: rgba(255, 255, 255, .16);
+}
+.has-page-bg .empty { color: rgba(255, 255, 255, .72); border-color: rgba(255, 255, 255, .2); }
+
+/* 头像卡片玻璃化，同时作为彩蛋热区（不设 pointer 光标，避免暴露） */
+.has-page-bg .hero-side {
+  position: relative;
+  z-index: 1;
+  border-color: rgba(255, 255, 255, .18);
+  background-color: rgba(255, 255, 255, .08);
+  transition: background-color .3s ease, border-color .3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.has-page-bg .hero-avatar {
+  border-color: rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .1);
+}
+.has-page-bg .hero-side .name { color: #fff; }
+.has-page-bg .hero-side .quote { color: rgba(255, 255, 255, .72); }
+.has-page-bg .hero-side .social a {
+  color: rgba(255, 255, 255, .82);
+  border-color: rgba(255, 255, 255, .2);
+}
+.has-page-bg .hero-side .social a:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .5);
+  background: rgba(255, 255, 255, .16);
+}
+
+/* 彩蛋：连点头像卡片 N 次 → 换成 sunqian。只改 DOM，不写任何存储，刷新即恢复 */
+.has-page-bg .hero-side.is-egg {
+  border-color: rgba(255, 255, 255, .32);
+  background-image: var(--egg-image);
+  /* 卡片是竖长条，原图近方：contain 会两侧留白，改用 cover 但顶部对齐，
+     让人物面部落在卡片上半部（头像正上方），不被裁掉 */
+  background-size: cover;
+  background-position: center 18%;
+  background-repeat: no-repeat;
+  animation: egg-pop .46s ease;
+}
+/* 基础压暗层（纯色 + opacity，不用 rgba(...,var()) 以免被丢弃） */
+.has-page-bg .hero-side.is-egg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #09080f;
+  opacity: var(--egg-veil, .4);
+  pointer-events: none;
+}
+/* 底部渐变：图片保持清晰，下半部文字所处区域压暗 */
+.has-page-bg .hero-side.is-egg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg,
+      rgba(9, 8, 16, 0) 38%,
+      rgba(9, 8, 16, .5) 70%,
+      rgba(9, 8, 16, .8) 100%);
+  pointer-events: none;
+}
+.has-page-bg .hero-side.is-egg > * { position: relative; z-index: 1; }
+.has-page-bg .hero-side.is-egg .name { color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .85); }
+.has-page-bg .hero-side.is-egg .quote { color: rgba(255, 255, 255, .86); text-shadow: 0 1px 12px rgba(0, 0, 0, .85); }
+.has-page-bg .hero-side.is-egg .social a {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .32);
+  background: rgba(9, 8, 16, .4);
+}
+.has-page-bg .hero-side.is-egg .hero-avatar {
+  border-color: rgba(255, 255, 255, .45);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
+}
+
+@keyframes egg-pop {
+  0% { transform: scale(1); }
+  38% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
