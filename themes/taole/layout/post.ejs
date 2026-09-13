@@ -39,6 +39,19 @@
           </div>
           <h1><%= page.title %></h1>
           <div class="post-meta">
+            <% var author = author_of(page); %>
+            <% if (author.url) { %>
+              <a class="post-author" href="<%= author.url %>" target="_blank" rel="noopener" title="<%= author.github ? '@' + author.github : author.name %>">
+                <img src="<%= author.avatar %>" width="18" height="18" alt="" decoding="async" referrerpolicy="no-referrer">
+                <span><%= author.name %></span>
+              </a>
+            <% } else { %>
+              <span class="post-author">
+                <img src="<%= author.avatar %>" width="18" height="18" alt="" decoding="async" referrerpolicy="no-referrer">
+                <span><%= author.name %></span>
+              </span>
+            <% } %>
+            <span class="sep"></span>
             <time datetime="<%= page.date.toISOString() %>"><%= date(page.date, 'YYYY-MM-DD') %></time>
             <span class="sep"></span>
             <span>约 <%= mins %> 分钟</span>

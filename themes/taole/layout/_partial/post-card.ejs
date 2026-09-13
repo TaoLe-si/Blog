@@ -9,6 +9,12 @@
 %>
 <a class="post-card reveal" href="<%- url_for(post.path) %>">
   <div class="post-meta">
+    <% var author = author_of(post); %>
+    <span class="post-author" title="<%= author.github ? '@' + author.github : author.name %>">
+      <img src="<%= author.avatar %>" width="16" height="16" alt="" decoding="async" referrerpolicy="no-referrer">
+      <span><%= author.name %></span>
+    </span>
+    <span class="sep"></span>
     <time datetime="<%= post.date.toISOString() %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
     <span class="sep"></span>
     <span>约 <%= mins %> 分钟</span>

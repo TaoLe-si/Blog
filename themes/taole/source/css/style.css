@@ -363,12 +363,30 @@ img { max-width: 100%; }
 .post-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   font-size: 13px;
   color: var(--text-mute);
 }
 .post-meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
 .post-meta time { font-variant-numeric: tabular-nums; }
+.post-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  font-weight: 600;
+}
+.post-author img {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-soft);
+}
+a.post-author:hover { color: var(--accent); }
+.post-card .post-author { font-weight: 500; }
+.post-card .post-author img { width: 16px; height: 16px; }
 
 .post-card h3 {
   margin: 10px 0 8px;

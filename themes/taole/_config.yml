@@ -7,7 +7,7 @@ signature: 桃之夭夭，灼灼其华
 # 头像：留空则用主题内置的 /images/avatar.jpg，也可填完整 URL
 avatar: ""
 
-# 侧栏个人简介
+# 侧栏个人简介（默认作者的 bio 在 source/_data/authors.yml，这里作缺省）
 bio: 图灵派
 
 # 首页 hero 区

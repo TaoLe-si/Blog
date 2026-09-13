@@ -1,0 +1,16 @@
+# 作者登记。front-matter 可写：
+#   author: taole
+#   author: TaoLe-si
+#   author: https://github.com/TaoLe-si
+# 不写则用 default。未登记的 GitHub 登录名或 URL 也能解析，不必先改本文件。
+#
+# JSON：
+#   /api/authors.json
+#   /api/authors/<id>.json
+
+default: taole
+
+taole:
+  name: 桃
+  github: TaoLe-si
+  bio: 图灵派
