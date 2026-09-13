@@ -7,7 +7,7 @@
   <link href="https://taole-si.github.io/Blog/atom.xml" rel="self"/>
   
   <link href="https://taole-si.github.io/Blog/"/>
-  <updated>2025-03-26T10:52:41+08:00</updated>
+  <updated>2026-09-13T15:18:00+08:00</updated>
   <id>https://taole-si.github.io/Blog/</id>
   
   <author>
@@ -18,23 +18,27 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Hello World</title>
-    <link href="https://taole-si.github.io/Blog/2025/03/26/hello-world/"/>
-    <id>https://taole-si.github.io/Blog/2025/03/26/hello-world/</id>
-    <published>2025-03-26T10:52:41+08:00</published>
-    <updated>2025-03-26T10:52:41+08:00</updated>
+    <title>散文 是王子，还是公主？</title>
+    <link href="https://taole-si.github.io/Blog/2026/09/13/prince-or-princess/"/>
+    <id>https://taole-si.github.io/Blog/2026/09/13/prince-or-princess/</id>
+    <published>2026-09-13T15:18:00+08:00</published>
+    <updated>2026-09-13T15:18:00+08:00</updated>
     
-    <content type="html"><![CDATA[<p>这是这个博客的第一篇文章。与其照抄 Hexo 的默认模板，不如拿它当一次真实的练手：从零把站点跑起来，再把它改成自己想要的样子。</p><span id="more"></span><h2 id="为什么要自己写一遍"><a href="#为什么要自己写一遍" class="headerlink" title="为什么要自己写一遍"></a>为什么要自己写一遍</h2><p>Hexo 生成的默认主题开箱即用，但它把几乎所有东西都藏在模板里。想换个配色、加个板块、改一下文章卡片，改起来反而绕。所以这次我干脆把生成的静态产物直接重写了一遍 —— 结构、样式、交互全部自己控制。</p><blockquote><p>能用默认的，就先跑起来；要长期维护的，还是得自己握在手里。</p></blockquote><h2 id="几个常用命令"><a href="#几个常用命令" class="headerlink" title="几个常用命令"></a>几个常用命令</h2><p>Hexo 的日常其实就四条命令，记住基本就够用了。</p><h3 id="新建文章"><a href="#新建文章" class="headerlink" title="新建文章"></a>新建文章</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>会在 <code>source/_posts/</code> 下生成一份带 front-matter 的 Markdown。</p><h3 id="本地预览"><a href="#本地预览" class="headerlink" title="本地预览"></a>本地预览</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>默认起在 <code>http://localhost:4000</code>，改文件会热更新。</p><h3 id="生成静态文件"><a href="#生成静态文件" class="headerlink" title="生成静态文件"></a>生成静态文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>产物落在 <code>public/</code>，这一步决定了最终上线的样子。</p><h3 id="一键部署"><a href="#一键部署" class="headerlink" title="一键部署"></a>一键部署</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>配合 <code>_config.yml</code> 里的 deploy 配置，可以直接推到 GitHub Pages。</p><h2 id="这套界面的取舍"><a href="#这套界面的取舍" class="headerlink" title="这套界面的取舍"></a>这套界面的取舍</h2><p>整体走扁平化路线：去掉渐变阴影和拟物质感，靠留白、层级和一点点色彩对比来撑结构。</p><ul><li><strong>颜色</strong>：只保留一个主色（靛紫）和一个点缀色（暖橙），其余全部交给中性灰度。</li><li><strong>圆角</strong>：统一 10px &#x2F; 16px 两档，不做大小混用。</li><li><strong>动效</strong>：只保留位移和透明度过渡，时长控制在 250ms 以内，不喧宾夺主。</li><li><strong>深色模式</strong>：用 CSS 变量整套切换，不写第二份样式表。</li></ul><h2 id="接下来"><a href="#接下来" class="headerlink" title="接下来"></a>接下来</h2><p>之后会陆续把板块填起来：编程、教程、文学、随笔等等，每写一篇就归一次类。</p>]]></content>
-    
-    
-    <summary type="html">第一篇文章。与其照抄 Hexo 的默认模板，不如拿它当一次真实的练手：从零把站点跑起来，再把它改成自己想要的样子。</summary>
+    <content type="html"><![CDATA[<p>你出生了，出生在了国内的一个小家庭里，麻雀虽小，五脏俱全，你有一个温馨的小家，还记得小时候妈妈教你读书写字，爸爸教你勇气担当。你的心里很满足，虽然不知道怎样表达这种情感，但你知道，你一笑出声，你的小家庭也会充满快乐的味道。</p><span id="more"></span><p>经历了幼儿园，小学，你已不再是从前那个稚嫩，弱小的雏鹰了，你也学会了思考，一次放学在家门前，你没有推门进去，静静地在门外发呆，你听着家里面传来的吵架声，心中起了波澜，你不知道该怎么办，就这样一直发呆，等到怒火平息，你悄悄推门而进，你的爸爸妈妈迎面而来的问题，让你有点不知所措，你支支吾吾地解释是因为和小朋友一起玩才耽误了回来的时间，解释完又狼狈地逃向了自己的房间，因为你觉得，只有你自己的小房间是安全的，是纯洁无瑕的，仍旧是那个天真浪漫的小世界。</p><p>时间润物无声，初中的你也到了情窦初开的年纪，这时的你好像理解了，为什么小朋友之间会互相吸引，好像理解了为什么大人们之间会吵架，好像理解了什么是开心快乐，什么是忧郁难过，但是别人告诉你，这些都不重要，你只要好好学习就可以了，这时的你很不理解，难道这些事情都可以通过学习去解决吗？你百思不得其解。一次午后，你发现你的桌洞里多了一张小纸条，看着上面扭捏害羞的字，你就知道是你的好朋友留给你的，虽然不知道为什么，但是你仍然觉得这是你们之间的小秘密，不应该被其他人发现。于是你找啊又找，把这张小纸条藏在了一本你小朋友送的书里。</p><p>高中的你，是个聪明且敏锐的你，即便不是上知天文下知地理，也是对自然的万物都有了自己一定的看法，虽然也有些青春冲动，但你仍然明白，想要过上好的生活，不得已要抛弃你的小朋友，哪怕认识了一些新的伙伴，也仅仅是朋友而已，你非常努力，日此不疲地钻研书本，完成课业，这似乎有些让你忘记了你的小家，忘记了你曾经的那些思考，忘记了你的小朋友，忘记了曾经的一切。</p><p>终于你从繁忙的学业中解脱出来，而问题却是接踵而至，一切似乎你曾经忘却过的东西如潮水般涌来，你曾经不理解的吵架，现在你已经能理解了，你为了你曾经的梦想，褪去了稚嫩的外衣，懂得了隐藏不知所措，你学会了隐忍，可是你还是不明白，曾经的老师告诉你，什么事都要讲公平，可现在你却处处觉得不公平，你开始想，为什么别人有的你没有，别人做得到的你做不到，你开始迷茫。</p><p>一次你回家翻曾经的回忆，发现了那张夹在书里的小纸条，你看着上面扭捏稚嫩的字，心中又是欢喜，又是惋惜，你指尖在屏幕上滑啊滑，始终没看到那个你想看到的名字。</p><p>夜晚的星空，你静静地看着星星发呆，你思考着，忽然懂了，那个纯洁的小家，那个情窦初开的朋友，那些你曾经天真的努力，人生处处留空白，人生处处是遗憾。</p>]]></content>
     
     
+    <summary type="html">你出生了，出生在了国内的一个小家庭里，麻雀虽小，五脏俱全……人生处处留空白，人生处处是遗憾。</summary>
     
-    <category term="编程" scheme="https://taole-si.github.io/Blog/categories/%E7%BC%96%E7%A8%8B/"/>
     
     
-    <category term="Hexo" scheme="https://taole-si.github.io/Blog/tags/Hexo/"/>
+    <category term="文学" scheme="https://taole-si.github.io/Blog/categories/%E6%96%87%E5%AD%A6/"/>
+    
+    
+    <category term="散文" scheme="https://taole-si.github.io/Blog/tags/%E6%95%A3%E6%96%87/"/>
+    
+    <category term="成长" scheme="https://taole-si.github.io/Blog/tags/%E6%88%90%E9%95%BF/"/>
+    
+    <category term="回忆" scheme="https://taole-si.github.io/Blog/tags/%E5%9B%9E%E5%BF%86/"/>
     
   </entry>
   
