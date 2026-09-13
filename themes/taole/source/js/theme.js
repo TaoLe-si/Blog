@@ -405,10 +405,20 @@
      鼠标进入该侧热区：对应控件加 .is-peek 滑回；移出 2s 由上面的定时器收回；
      回到顶部（scrollY ≤ 8）才自动展开顶栏。
      热区就是控件自身的盒子（体积不变，只位移内部元素）。 */
-  var canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  // 只要求「能悬停」。原先还要求 pointer: fine，但触摸屏笔记本上
+  // 媒体查询常不可靠（有触控板却报 coarse），判定为假就整套静默失效，
+  // 表现为「改了样式但页面没变」。这里放宽 + 加运行时兜底。
+  var canHover = window.matchMedia("(hover: hover)");
+  var sawMouse = false;
+
+  function edgeAllowed() {
+    if (sawMouse) return true;          // 真收到过鼠标事件，无条件启用
+    return canHover.matches;
+  }
 
   function updateEdge() {
-    if (!canHover.matches) {
+    if (!edgeAllowed()) {
       doc.documentElement.classList.remove("edge-hidden");
       if (player) player.classList.remove("is-peek");
       if (tocPop) tocPop.classList.remove("is-peek");
@@ -441,7 +451,34 @@
       if (tocPop) tocPop.classList.remove("is-peek");
     }
   }
+
+  // 运行时兜底：只要真的移动了鼠标，就启用（媒体查询骗人也不怕）。
+  // 用 mousemove 而非 pointermove，且只认首次，之后解绑。
+  function onFirstMouse(e) {
+    // 触屏浏览器会合成 mousemove，用 sourceCapabilities 排除
+    if (e && e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    sawMouse = true;
+    doc.removeEventListener("mousemove", onFirstMouse);
+    updateEdge();
+  }
+  doc.addEventListener("mousemove", onFirstMouse, { passive: true });
+
+  // 媒体查询状态变化时重算（如外接鼠标插拔）
+  if (canHover.addEventListener) canHover.addEventListener("change", updateEdge);
+  else if (canHover.addListener) canHover.addListener(updateEdge);
+
   window.addEventListener("scroll", updateEdge, { passive: true });
   window.addEventListener("resize", updateEdge);
   updateEdge();
+
+  // 排查用：控制台输入 __EDGE__ 可看当前判定
+  window.__EDGE__ = function () {
+    return {
+      canHover: canHover.matches,
+      sawMouse: sawMouse,
+      edgeAllowed: edgeAllowed(),
+      edgeHidden: doc.documentElement.classList.contains("edge-hidden"),
+      scrollY: Math.round(window.pageYOffset || doc.documentElement.scrollTop),
+    };
+  };
 })();
