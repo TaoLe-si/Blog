@@ -1504,15 +1504,9 @@ html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
   .nav-links a:active, .to-top:active, .chip:active { transform: none; }
 }
 
-/* MathJax：数学块独立行，不吃段首缩进；行内公式不破坏中文换行 */
-.post-body mjx-container[display="true"] { text-indent: 0; margin: 1em 0; display: block; text-align: center; }
-.post-body mjx-container { font-size: 1.05em; }
-/* 错误回退：MathJax 渲染失败时给 mjx-merror 一个明显的视觉提示 */
-.post-body mjx-merror,
-.post-body [data-mjx-error] {
-  color: #c0392b;
-  border-bottom: 1px dashed #c0392b;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.92em;
-  padding: 0 2px;
-}
+/* KaTeX 预渲染（markdown-it-katex 在 build 时输出静态 HTML）：
+   .katex 行内公式；.katex-display 块级公式；.katex-mathml MathML 回退。 */
+.post-body .katex { font-size: 1.05em; }
+.post-body .katex-display { display: block; margin: 1em 0; text-align: center; text-indent: 0; }
+.post-body .katex-display-wrapper { text-indent: 0; }
+.post-body .katex-mathml { position: absolute; clip: rect(1px, 1px, 1px, 1px); padding: 0; border: 0; height: 1px; width: 1px; overflow: hidden; }
