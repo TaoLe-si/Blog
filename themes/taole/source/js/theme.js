@@ -101,12 +101,12 @@
       var tocTimer = null;
       function tocOpen() {
         if (tocTimer) { clearTimeout(tocTimer); tocTimer = null; }
-        tocPop.classList.add("is-open");
+        tocPop.classList.add("is-open", "is-peek");
       }
       function tocCloseLater() {
         if (tocTimer) clearTimeout(tocTimer);
         tocTimer = setTimeout(function () {
-          tocPop.classList.remove("is-open");
+          tocPop.classList.remove("is-open", "is-peek");
           tocTimer = null;
         }, 2000);
       }
@@ -298,12 +298,12 @@
     var hideTimer = null;
     function openFlyout() {
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-      player.classList.add("is-open");
+      player.classList.add("is-open", "is-peek");
     }
     function scheduleClose() {
       if (hideTimer) clearTimeout(hideTimer);
       hideTimer = setTimeout(function () {
-        player.classList.remove("is-open");
+        player.classList.remove("is-open", "is-peek");
         hideTimer = null;
       }, 2000);
     }
@@ -400,4 +400,48 @@
       }
     });
   }
+  /* ---------- 边缘控件自动收起（滚动隐藏 / 热区唤出） ----------
+     滚过 120px：html.edge-hidden → 顶栏上移出屏、左右贴边控件推出屏幕；
+     鼠标进入该侧热区：对应控件加 .is-peek 滑回；移出 2s 由上面的定时器收回；
+     回到顶部（scrollY ≤ 8）才自动展开顶栏。
+     热区就是控件自身的盒子（体积不变，只位移内部元素）。 */
+  var canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  function updateEdge() {
+    if (!canHover.matches) {
+      doc.documentElement.classList.remove("edge-hidden");
+      if (player) player.classList.remove("is-peek");
+      if (tocPop) tocPop.classList.remove("is-peek");
+      return;
+    }
+
+    var y = window.pageYOffset || doc.documentElement.scrollTop;
+    var hidden = doc.documentElement.classList.contains("edge-hidden");
+    var want = hidden;
+
+    // 滞后带：往下滑过 120px 才收，回到 8px 以内才展开（中间区间维持原状）
+    if (y <= 8) want = false;
+    else if (y > 120) want = true;
+    // 移动端菜单展开时不收顶栏，否则菜单会跟着一起飞走
+    if (doc.querySelector(".nav-links.open")) want = false;
+
+    if (want === hidden) return;
+    doc.documentElement.classList.toggle("edge-hidden", want);
+
+    if (want) {
+      // 滚动时鼠标可能已经停在热区里，mouseenter 不会再触发，这里补判一次
+      Array.prototype.forEach.call([player, tocPop], function (el) {
+        if (!el) return;
+        var on = false;
+        try { on = el.matches(":hover"); } catch (e) { on = false; }
+        el.classList.toggle("is-peek", on);
+      });
+    } else {
+      if (player) player.classList.remove("is-peek");
+      if (tocPop) tocPop.classList.remove("is-peek");
+    }
+  }
+  window.addEventListener("scroll", updateEdge, { passive: true });
+  window.addEventListener("resize", updateEdge);
+  updateEdge();
 })();

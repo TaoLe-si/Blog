@@ -98,7 +98,9 @@ img { max-width: 100%; }
   z-index: 60;
   background: var(--bg);
   border-bottom: 1px solid transparent;
-  transition: border-color .25s ease;
+  /* --hdr-y 承载隐藏位移，滚动后由 html.edge-hidden 置为 -100% */
+  transform: translateY(var(--hdr-y, 0px));
+  transition: border-color .25s ease, transform .3s ease;
 }
 .site-header.is-stuck { border-bottom-color: var(--line); }
 
@@ -768,6 +770,7 @@ figure.highlight pre {
   right: 0; top: 50%;
   transform: translateY(-50%);
   z-index: 90;
+  --toc-x: 0px;
 }
 .toc-handle {
   display: grid; place-items: center;
@@ -778,7 +781,10 @@ figure.highlight pre {
   background: var(--card);
   color: var(--accent);
   cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  /* --toc-x 承载隐藏位移；.toc-pop 盒子不动，留作热区 */
+  transform: translateX(var(--toc-x, 0px));
+  transition: background .15s ease, color .15s ease, border-color .15s ease,
+    transform .32s cubic-bezier(.4, 0, .2, 1);
 }
 .toc-handle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 .toc-handle svg { width: 16px; height: 16px; }
@@ -992,6 +998,7 @@ figure.highlight pre {
   left: 0; top: 0; bottom: 0;
   width: 26px;
   z-index: 95;
+  --music-x: 0px;
 }
 
 /* 全高竖向进度条 */
@@ -1001,6 +1008,10 @@ figure.highlight pre {
   width: 4px;
   background: color-mix(in srgb, var(--accent) 25%, transparent);
   cursor: pointer;
+  /* --music-x 承载隐藏位移，与音符把手一起推出左缘 */
+  transform: translateX(var(--music-x, 0px));
+  transition: transform .32s cubic-bezier(.4, 0, .2, 1),
+    width .18s ease, background .2s ease;
 }
 .music-player:hover .music-rail { width: 6px; }
 
@@ -1011,11 +1022,11 @@ figure.highlight pre {
   background: linear-gradient(180deg, var(--grad-hi), var(--grad-lo));
 }
 
-/* 贴左缘的音符把手：常驻可见 */
+/* 贴左缘的音符把手：常驻可见（滚动后与进度条一起推出屏幕） */
 .music-handle {
   position: absolute;
   left: 0; top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) translateX(var(--music-x, 0px));
   display: grid; place-items: center;
   width: 22px; height: 46px;
   border: 1px solid var(--line);
@@ -1024,7 +1035,8 @@ figure.highlight pre {
   background: var(--card);
   color: var(--accent);
   cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  transition: background .15s ease, color .15s ease, border-color .15s ease,
+    transform .32s cubic-bezier(.4, 0, .2, 1);
 }
 .music-handle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 .music-handle svg { width: 14px; height: 14px; }
@@ -1301,6 +1313,43 @@ figure.highlight pre {
   38% { transform: scale(1.045); }
   100% { transform: scale(1); }
 }
+
+/* ---------------- 边缘控件自动收起（滚动隐藏 / 热区唤出） ----------------
+   滚动超过 120px → html.edge-hidden：顶栏上移出屏、左右贴边控件推出屏幕；
+   鼠标移入该侧区域 → 对应控件加 .is-peek 滑回原位；
+   移出区域 2s 后（JS 定时器）收回；回到页面顶部（scrollY ≤ 8）才自动展开顶栏。
+   控件盒子本身原地不动，只位移内部元素，盒子继续充当热区。
+   触屏 / 无悬停设备由 JS 侧跳过，不启用本机制。 */
+
+html.edge-hidden .site-header { --hdr-y: -100%; }
+
+/* 右侧目录：把手推出右缘 34px（宽 30px，完全出屏） */
+html.edge-hidden .toc-pop { --toc-x: 34px; }
+html.edge-hidden .toc-pop.is-peek { --toc-x: 0px; }
+/* 隐藏态把热区向上下拉长，避免只剩 56px 高的可命中区 */
+html.edge-hidden .toc-pop::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: -1px;
+  top: -16vh;
+  bottom: -16vh;
+}
+html.edge-hidden .toc-pop .toc-handle {
+  /* 抬到 ::before 热区之上，否则点击会落在热区上、按钮点不动 */
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+html.edge-hidden .toc-pop.is-peek .toc-handle { pointer-events: auto; }
+
+/* 左侧音乐：竖向进度条 + 音符把手一起推出左缘 */
+html.edge-hidden .music-player { --music-x: -34px; }
+html.edge-hidden .music-player.is-peek { --music-x: 0px; }
+html.edge-hidden .music-rail,
+html.edge-hidden .music-handle { pointer-events: none; }
+html.edge-hidden .music-player.is-peek .music-rail,
+html.edge-hidden .music-player.is-peek .music-handle { pointer-events: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
