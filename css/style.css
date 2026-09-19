@@ -8,14 +8,18 @@
   --bg: #fbfaf9;
   --bg-soft: #f4f2f0;
   --card: #ffffff;
-  --text: #1b1a19;
-  --text-soft: #55504b;
-  --text-mute: #8d8781;
+  --text: #14110f;
+  --text-soft: #4d4843;
+  --text-mute: #6e6964;
   --line: #e8e4e1;
   --line-soft: #f1eeec;
   --accent: #5b5bd6;
   --accent-2: #e0805a;
+  --accent-strong: #4848b8;
+  --accent-warm: #c95f3c;
   --accent-soft: rgba(91, 91, 214, 0.10);
+  --bg-tag: rgba(91, 91, 214, 0.08);
+  --bg-tag-strong: rgba(91, 91, 214, 0.14);
   --grad-hi: #8f8ff0;
   --grad-lo: #5b5bd6;
   --code-bg: #1d1b2b;
@@ -38,12 +42,16 @@
   --card: #1c1a29;
   --text: #efedf8;
   --text-soft: #b6b1cb;
-  --text-mute: #817c98;
+  --text-mute: #9c95b8;
   --line: #2e2b40;
   --line-soft: #262337;
   --accent: #8f8ff0;
   --accent-2: #f0a37e;
+  --accent-strong: #a8acff;
+  --accent-warm: #ff8e5c;
   --accent-soft: rgba(143, 143, 240, 0.14);
+  --bg-tag: rgba(143, 143, 240, 0.10);
+  --bg-tag-strong: rgba(143, 143, 240, 0.18);
   --grad-hi: #b3b3ff;
   --grad-lo: #7a7ae8;
   --code-bg: #0e0d16;
@@ -114,6 +122,8 @@ img { max-width: 100%; }
   transition: border-color .25s ease, transform .3s ease;
 }
 .site-header.is-stuck { border-bottom-color: var(--line); }
+/* 鼠标进入顶部 80px 时临时显示顶栏（无论是否已 scroll-hidden） */
+.site-header.is-peek-top { transform: translateY(0) !important; }
 
 .nav {
   position: relative;
@@ -294,24 +304,24 @@ img { max-width: 100%; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 28px 32px;
+  gap: 16px;
+  padding: 32px 36px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg);
 }
 .hero-avatar {
-  width: 96px;
-  height: 96px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--bg-soft);
   background: var(--bg-soft);
 }
-.hero-side .name { font-weight: 700; font-size: 16.5px; letter-spacing: -.01em; }
+.hero-side .name { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
 .hero-side .quote {
   margin: 0;
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--text-soft);
   letter-spacing: .06em;
   white-space: nowrap;
@@ -363,12 +373,31 @@ img { max-width: 100%; }
 .post-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-mute);
 }
 .post-meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
 .post-meta time { font-variant-numeric: tabular-nums; }
+.post-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: inherit;
+  font-weight: 600;
+}
+.post-author img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+}
+a.post-author:hover { color: var(--accent); }
+.post-card .post-author { font-weight: 500; font-size: 13.5px; }
+.post-card .post-author img { width: 16px; height: 16px; border: 0; }
 
 .post-card h3 {
   margin: 10px 0 8px;
@@ -397,11 +426,11 @@ img { max-width: 100%; }
   margin-top: 16px;
 }
 .chip {
-  padding: 3px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
   background: var(--bg-soft);
   border: 1px solid var(--line-soft);
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-soft);
   transition: color .18s ease, border-color .18s ease, background-color .18s ease, transform .12s ease;
 }
@@ -418,10 +447,26 @@ img { max-width: 100%; }
 .post-card:hover .read-more svg { transform: translateX(4px); }
 
 .chip-accent {
-  background: var(--accent-soft);
+  background: var(--bg-tag);
   border-color: transparent;
   color: var(--accent);
   font-weight: 600;
+}
+/* 主类标签：板块 / 大类文章分类用。比 chip-accent 更强一档：背景更深、字更粗 */
+.chip-topic {
+  background: var(--bg-tag-strong);
+  color: var(--accent-strong);
+  border-color: transparent;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 12px;
+}
+[data-theme="dark"] .chip-topic {
+  color: var(--accent);
+}
+.chip-topic:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 .post-tags {
@@ -689,10 +734,15 @@ img { max-width: 100%; }
 .progress-bar {
   position: fixed;
   top: 0; left: 0;
-  height: 2px;
+  height: 3px;
   width: 0;
   z-index: 100;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 8px rgba(91, 91, 214, 0.35);
+  transition: width .08s linear;
+}
+[data-theme="dark"] .progress-bar {
+  box-shadow: 0 0 10px rgba(143, 143, 240, 0.45);
 }
 
 .post-layout {
@@ -1322,15 +1372,43 @@ figure.highlight pre {
   }
   .nav-links.open { display: flex; }
   .nav-links a { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 15px; }
-  .hero .wrap { padding-top: 40px; padding-bottom: 40px; }
-  .hero-stats { gap: 0; }
+  /* 顶栏 icon 按钮热区放大到 ≥44px（Apple HIG / Material 规范） */
+  .icon-btn { width: 44px; height: 44px; }
+  .nav { gap: 4px; }
+  .nav-right { gap: 0; }
+  /* hero 在移动端的字号收缩 */
+  .hero .wrap {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding-top: 36px;
+    padding-bottom: 36px;
+  }
+  .hero h1 { font-size: clamp(24px, 7vw, 32px); }
+  .hero p { font-size: 15px; }
+  .hero-side { padding: 24px 20px; }
+  .hero-avatar { width: 80px; height: 80px; }
+  .hero-side .name { font-size: 16px; }
+  .hero-side .quote { font-size: 13px; white-space: normal; text-align: center; }
+  .hero-stats { gap: 0; margin-top: 22px; padding-top: 16px; }
   .stat { padding-right: 22px; margin-right: 22px; }
+  .stat .num { font-size: 20px; }
+  .stat .lbl { font-size: 11px; }
+  /* 文章 meta 在移动端缩小头像 */
+  .post-meta { font-size: 13px; gap: 8px; }
+  .post-author img { width: 18px; height: 18px; }
   .layout { padding: 34px 0 56px; }
   .post-card { padding: 20px 18px; }
   .post-card h3 { font-size: 19.5px; }
   .topic-grid { grid-template-columns: minmax(0, 1fr); }
   .post-nav { grid-template-columns: minmax(0, 1fr); }
   .post-nav-item.next { text-align: left; }
+  /* 左侧音乐把手在窄屏收缩、降低视觉权重 */
+  .music-player { width: 18px; }
+  .music-handle { width: 14px; height: 36px; border-radius: 0 8px 8px 0; }
+  .music-handle svg { width: 11px; height: 11px; }
+  /* 顶栏唤回边缘控件的触发区 */
+  html.edge-hidden .toc-pop { --toc-x: 22px; }
+  html.edge-hidden .music-player { --music-x: -22px; }
 }
 
 /* ---------------- 首页随机背景 ---------------- */

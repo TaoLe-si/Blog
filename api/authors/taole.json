@@ -1,0 +1,119 @@
+{
+  "id": "taole",
+  "name": "桃",
+  "github": "TaoLe-si",
+  "url": "https://github.com/TaoLe-si",
+  "avatar": "https://github.com/TaoLe-si.png?size=128",
+  "bio": "图灵派",
+  "default": true,
+  "posts": [
+    {
+      "title": "夭夭：没有注意力的语言模型",
+      "path": "/Blog/2026/09/13/yaoyao/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/yaoyao/",
+      "date": "2026-09-13T09:45:00.000Z",
+      "categories": [
+        "编程"
+      ]
+    },
+    {
+      "title": "概率样板：把随机产出写成置信区间",
+      "path": "/Blog/2026/09/13/probability-pattern/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/probability-pattern/",
+      "date": "2026-09-13T09:15:00.000Z",
+      "categories": [
+        "编程"
+      ]
+    },
+    {
+      "title": "AE2 合成计算的 VM 化与 JIT 化",
+      "path": "/Blog/2026/09/13/ae2-vm-jit/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/ae2-vm-jit/",
+      "date": "2026-09-13T08:30:00.000Z",
+      "categories": [
+        "编程"
+      ]
+    },
+    {
+      "title": "等桃花开",
+      "path": "/Blog/2026/09/13/waiting-for-peach-blossoms/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/waiting-for-peach-blossoms/",
+      "date": "2026-09-13T07:32:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "萤火虫",
+      "path": "/Blog/2026/09/13/firefly/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/firefly/",
+      "date": "2026-09-13T07:30:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "致安眠",
+      "path": "/Blog/2026/09/13/to-sleep/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/to-sleep/",
+      "date": "2026-09-13T07:28:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "唤我芳名",
+      "path": "/Blog/2026/09/13/call-my-name/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/call-my-name/",
+      "date": "2026-09-13T07:26:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "年轮",
+      "path": "/Blog/2026/09/13/year-rings/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/year-rings/",
+      "date": "2026-09-13T07:26:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "bad ending",
+      "path": "/Blog/2026/09/13/bad-ending/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/bad-ending/",
+      "date": "2026-09-13T07:24:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "小蝴蝶",
+      "path": "/Blog/2026/09/13/little-butterfly/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/little-butterfly/",
+      "date": "2026-09-13T07:22:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "盛夏那年",
+      "path": "/Blog/2026/09/13/summer-that-year/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/summer-that-year/",
+      "date": "2026-09-13T07:20:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    },
+    {
+      "title": "是王子，还是公主？",
+      "path": "/Blog/2026/09/13/prince-or-princess/",
+      "url": "https://taole-si.github.io/Blog/2026/09/13/prince-or-princess/",
+      "date": "2026-09-13T07:18:00.000Z",
+      "categories": [
+        "文学"
+      ]
+    }
+  ]
+}

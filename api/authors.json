@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "default": "taole",
+  "authors": [
+    {
+      "id": "taole",
+      "name": "桃",
+      "github": "TaoLe-si",
+      "url": "https://github.com/TaoLe-si",
+      "avatar": "https://github.com/TaoLe-si.png?size=128",
+      "bio": "图灵派",
+      "posts": 12
+    }
+  ]
+}

@@ -151,6 +151,28 @@
     window.addEventListener("resize", updateEdge);
     updateEdge();
 
+    /* ---------- 顶栏自动唤回 ----------
+       当顶栏已隐藏（edge-hidden），鼠标进入顶部 80px 热区 → 顶栏滑回（临时显示）；
+       鼠标离开该热区 → 顶栏重新隐藏（如果还在滚过 120px）。 */
+    if (header) {
+      var peekTimer = null;
+      doc.addEventListener("mousemove", function (e) {
+        if (!doc.documentElement.classList.contains("edge-hidden")) return;
+        if (e.clientY <= 80) {
+          header.classList.add("is-peek-top");
+          if (peekTimer) clearTimeout(peekTimer);
+          peekTimer = null;
+        } else {
+          if (header.classList.contains("is-peek-top")) {
+            if (peekTimer) clearTimeout(peekTimer);
+            peekTimer = setTimeout(function () {
+              header.classList.remove("is-peek-top");
+            }, 240);
+          }
+        }
+      }, { passive: true });
+    }
+
     // 排查用：控制台输入 __EDGE__ 可看当前判定
     window.__EDGE__ = function () {
       return {
